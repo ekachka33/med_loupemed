@@ -1,18 +1,30 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
 *.egg-info/
 .pytest_cache/
-.env
+.tox/
+.mypy_cache/
 
 # Django
+*.log
+*.sqlite3
 media/
 static_collected/
 
-# IDE
-.idea/
-.vscode/
+# IDEs
+.idea/  # Для PyCharm/IntelliJ
+.vscode/ # Для VS Code
 
-# OS
+# Operating System
 .DS_Store
 Thumbs.db
+
+# Docker
+.dockerignore
+docker-compose.override.yml

@@ -47,6 +47,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'core',
+    'accounts',
+    'services',
+    'appointments',
 ]
 
 MIDDLEWARE = [
@@ -64,7 +68,7 @@ ROOT_URLCONF = 'med_loupemed.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -72,6 +76,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.contact_info',
             ],
         },
     },
@@ -132,14 +137,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'), # <-- Указываем Django, где искать статические файлы
+]
 # Директория, куда Django будет собирать все статические файлы для продакшена.
-# Указана в .gitignore.
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
 
 # URL для доступа к пользовательским медиафайлам.
 MEDIA_URL = 'media/'
 # Директория, где будут храниться пользовательские медиафайлы.
-# Указана в .gitignore.
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type

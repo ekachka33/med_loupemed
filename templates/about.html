@@ -1,0 +1,317 @@
+{% extends 'base.html' %} {# Исправлена опечатка здесь: убран лишний {{ #}
+{% load static %}
+
+{% block title %}О клинике - Медицинская клиника{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center mb-4">О нашей клинике</h1>
+
+    {# Существующая секция "О нашей клинике" #}
+    {% if about_us_page %}
+        <div class="row align-items-center mb-5"> {# Добавим mb-5 для отступа #}
+            <div class="col-md-8">
+                <h2>{{ about_us_page.title }}</h2>
+                <p>{{ about_us_page.content|linebreaksbr }}</p>
+                {% if about_us_page.last_updated %}
+                    <small class="text-muted">Последнее обновление: {{ about_us_page.last_updated|date:"d M Y H:i" }}</small>
+                {% endif %}
+            </div>
+            {% if about_us_page.image %}
+                <div class="col-md-4 text-center">
+                    <img src="{{ about_us_page.image.url }}" alt="{{ about_us_page.title }}" class="img-fluid rounded shadow-sm">
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <p class="text-center">Информация о клинике пока недоступна. Пожалуйста, добавьте ее через панель администратора.</p>
+    {% endif %}
+
+    {# Секция: Наша команда врачей #}
+    <h2 class="text-center mb-4" id="doctors-section">Наша команда</h2>
+    {% if doctors %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+            {% for doctor in doctors %}
+            <div class="col">
+                {# Делаем всю карточку кликабельной #}
+                <a href="{% url 'core:doctor_detail' pk=doctor.pk %}" class="card h-100 shadow-sm text-decoration-none text-dark">
+                    {% if doctor.photo %}
+                        <img src="{{ doctor.photo.url }}" class="card-img-top" alt="{{ doctor.full_name }}" style="height: 250px; object-fit: cover;">
+                    {% else %}
+                        <img src="{% static 'img/doctor_placeholder.jpg' %}" class="card-img-top" alt="Фото врача" style="height: 250px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body text-center">
+                        <h5 class="card-title">{{ doctor.full_name }}</h5>
+                        <p class="card-text text-muted">{{ doctor.specialty }}</p>
+                        <p class="card-text"><small>Опыт: {{ doctor.experience_years }} лет</small></p>
+                    </div>
+                </a> {# Закрываем тег <a> #}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center mb-5">Информация о врачах пока недоступна. Добавьте ее через панель администратора.</p>
+    {% endif %}
+
+    {# Секция: Отзывы клиентов #}
+    <h2 class="text-center mb-4">Отзывы клиентов</h2>
+    {% if reviews %}
+        <div id="reviewsCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                {% for review in reviews %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="card text-center p-4">
+                        <div class="card-body">
+                            <h5 class="card-title">"{{ review.text|truncatechars:150 }}"</h5>
+                            <p class="card-text">
+                                <small class="text-muted">От: {{ review.full_name }}</small>
+                                {% if review.doctor %}
+                                <br><small class="text-muted">О враче: {{ review.doctor.full_name }}</small>
+                                {% endif %}
+                                <br><small class="text-muted">Оценка: {{ review.rating }} из 5</small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#reviewsCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#reviewsCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    {% else %}
+        <p class="text-center mb-4">Отзывов пока нет. Будьте первым!</p>
+    {% endif %}
+
+    {# Секция для формы отзыва (общая кнопка) #}
+    <div class="text-center mt-5 mb-5 p-4 border rounded shadow-sm">
+        <h3>Оставьте свой отзыв</h3>
+        <p>Нам важно ваше мнение. Поделитесь своими впечатлениями о нашей клинике.</p>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">Оставить отзыв</button>
+    </div>
+
+    {# Модальное окно для общей формы отзыва #}
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reviewModalLabel">Оставить отзыв о клинике</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reviewFormGeneral" method="post" action="{% url 'core:submit_review' %}">
+                        {% csrf_token %} {# Важно для безопасности Django форм #}
+
+                        <div class="mb-3">
+                            <label for="{{ form.full_name.id_for_label }}" class="form-label">{{ form.full_name.label }}</label>
+                            {{ form.full_name }}
+                            {% if form.full_name.errors %}
+                                <div class="text-danger">{{ form.full_name.errors.0 }}</div> {# .0 чтобы вывести только первое сообщение об ошибке #}
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger">{{ form.email.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        {# Рейтинг будет скрытым полем, отображение через JS звездочки #}
+                        <div class="mb-3">
+                            <label class="form-label">Оценка:</label>
+                            <div id="ratingStarsGeneral" class="d-flex justify-content-center">
+                                <span class="star" data-value="1">&#9733;</span>
+                                <span class="star" data-value="2">&#9733;</span>
+                                <span class="star" data-value="3">&#9733;</span>
+                                <span class="star" data-value="4">&#9733;</span>
+                                <span class="star" data-value="5">&#9733;</span>
+                            </div>
+                            {# Рендерим скрытое поле rating с правильным id #}
+                            <input type="hidden" name="{{ form.rating.name }}" id="{{ form.rating.id_for_label }}" value="{{ form.rating.value|default:5 }}">
+                            {% if form.rating.errors %}
+                                <div class="text-danger">{{ form.rating.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.text.id_for_label }}" class="form-label">{{ form.text.label }}</label>
+                            {{ form.text }}
+                            {% if form.text.errors %}
+                                <div class="text-danger">{{ form.text.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        {# Поле doctor (выбор врача) для общей формы будет необязательным #}
+                        <div class="mb-3">
+                            <label for="{{ form.doctor.id_for_label }}" class="form-label">{{ form.doctor.label }}</label>
+                            {{ form.doctor }}
+                            {% if form.doctor.errors %}
+                                <div class="text-danger">{{ form.doctor.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div id="formErrorsGeneral" class="alert alert-danger d-none mt-3"></div>
+                        <button type="submit" class="btn btn-primary d-none" id="submitReviewBtnGeneral"></button> {# Скрытая кнопка для отправки формы #}
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" class="btn btn-primary" id="submitReviewTriggerBtnGeneral">Отправить отзыв</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>{# Конец div.container #}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // JS для обработки звездочек рейтинга
+    function setupStarRating(containerId, hiddenInputId) {
+        const stars = document.querySelectorAll(`#${containerId} .star`);
+        const hiddenInput = document.getElementById(hiddenInputId);
+
+        // Функция для установки визуального состояния звезд
+        function setStarVisuals(value) {
+            stars.forEach((s, index) => {
+                if (index < value) {
+                    s.classList.add('selected');
+                } else {
+                    s.classList.remove('selected');
+                }
+                s.classList.remove('hovered'); // Убираем hover state
+            });
+        }
+
+        // Инициализация выбранных звезд при загрузке (для дефолтного значения 5)
+        // Если значение уже есть (например, после неудачной отправки формы), используем его
+        let initialRating = hiddenInput.value ? parseInt(hiddenInput.value) : 5;
+        setStarVisuals(initialRating);
+
+
+        stars.forEach(star => {
+            star.addEventListener('mouseover', function() {
+                let currentValue = parseInt(this.dataset.value);
+                stars.forEach((s, index) => {
+                    if (index < currentValue) {
+                        s.classList.add('hovered');
+                    } else {
+                        s.classList.remove('hovered');
+                    }
+                });
+            });
+
+            star.addEventListener('mouseout', function() {
+                stars.forEach(s => s.classList.remove('hovered'));
+            });
+
+            star.addEventListener('click', function() {
+                let clickedValue = parseInt(this.dataset.value);
+                hiddenInput.value = clickedValue;
+                setStarVisuals(clickedValue); // Устанавливаем выбранное состояние по клику
+            });
+        });
+    }
+
+    // Инициализация звездочек для общей формы на about.html
+    // id_rating - это id, который Django генерирует для поля 'rating' формы ReviewForm
+    setupStarRating('ratingStarsGeneral', 'id_rating');
+
+
+    // Обработка отправки общей формы отзыва через AJAX
+    document.getElementById('submitReviewTriggerBtnGeneral').addEventListener('click', function() {
+        document.getElementById('submitReviewBtnGeneral').click(); // Триггерим скрытую кнопку submit
+    });
+
+    document.getElementById('reviewFormGeneral').addEventListener('submit', function(e) {
+        e.preventDefault(); // Предотвращаем стандартную отправку формы
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const formErrorsDiv = document.getElementById('formErrorsGeneral');
+        formErrorsDiv.classList.add('d-none'); // Скрываем предыдущие общие ошибки
+        formErrorsDiv.innerHTML = ''; // Очищаем текст общих ошибок
+
+        // Очищаем ошибки для каждого поля перед новой отправкой
+        form.querySelectorAll('.text-danger').forEach(el => el.innerHTML = '');
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest', // Указываем, что это AJAX запрос
+                'X-CSRFToken': form.querySelector('[name="csrfmiddlewaretoken"]').value // Отправляем CSRF токен
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                // Если статус не 200 (например, 400 Bad Request), парсим JSON с ошибками
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Заменяем alert на showToast
+                showToast(data.message, 'success'); // Используем функцию showToast из base.html
+
+                var reviewModal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
+                reviewModal.hide(); // Закрываем модальное окно
+                form.reset(); // Очищаем форму
+
+                // Сбрасываем вид звездочек после очистки формы (возвращаем к дефолтным 5)
+                setupStarRating('ratingStarsGeneral', 'id_rating');
+
+                // TODO: Здесь можно добавить логику для обновления списка отзывов на странице без перезагрузки
+                // Например, если хочешь сразу видеть отзыв, можно перезагрузить страницу
+                // location.reload();
+
+            } else {
+                // Отображаем ошибки валидации формы
+                let errorMessage = '';
+                for (const field in data.errors) {
+                    const fieldElement = form.elements[field];
+                    if (fieldElement) {
+                        const fieldErrorDiv = fieldElement.parentNode.querySelector('.text-danger');
+                        if (fieldErrorDiv) {
+                            fieldErrorDiv.innerHTML = data.errors[field].join(', ');
+                        } else {
+                            // Fallback if specific error div not found
+                            errorMessage += `<p><strong>${field}:</strong> ${data.errors[field].join(', ')}</p>`;
+                        }
+                    } else {
+                        // For non-field errors (e.g., __all__)
+                        errorMessage += `<p>${data.errors[field].join(', ')}</p>`;
+                    }
+                }
+                if (errorMessage) { // Если есть общие ошибки или ошибки для полей, которые не нашлись
+                    formErrorsDiv.innerHTML = errorMessage;
+                    formErrorsDiv.classList.remove('d-none');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при отправке отзыва:', error);
+            // Проверяем, если это ошибка сети или другая непредвиденная ошибка
+            formErrorsDiv.innerHTML = '<p>Произошла непредвиденная ошибка при отправке отзыва. Пожалуйста, попробуйте еще раз.</p>';
+            formErrorsDiv.classList.remove('d-none');
+        });
+    });
+</script>
+<style>
+    /* Стили для звездочек рейтинга */
+    .star {
+        font-size: 2rem;
+        color: #ccc; /* Серый цвет для невыбранных звезд */
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    .star.selected,
+    .star.hovered {
+        color: #ffc107; /* Желтый цвет для выбранных/наведенных звезд (Bootstrap warning color) */
+    }
+</style>
+{% endblock %}

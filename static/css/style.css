@@ -1,0 +1,41 @@
+/* Стили для Hero-секции и Карусели */
+.hero-section {
+    position: relative;
+    overflow: hidden;
+    margin-top: -16px; /* Убираем небольшой отступ от навигации */
+}
+
+.carousel-item img {
+    height: 450px; /* Фиксированная высота для всех изображений карусели */
+    object-fit: cover; /* Изображение будет покрывать весь блок, обрезая лишнее */
+    filter: brightness(60%); /* Делаем изображение немного темнее, чтобы текст был читаемым */
+}
+
+.carousel-caption {
+    background-color: rgba(0, 0, 0, 0.4); /* Полупрозрачный фон для текста */
+    padding: 20px;
+    border-radius: 8px;
+    color: white; /* Цвет текста в карусели */
+    bottom: 20%; /* Поднимаем текст выше */
+    left: 10%;
+    right: 10%;
+}
+
+.carousel-caption h5 {
+    font-family: 'Montserrat', sans-serif; /* Применяем новый шрифт */
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white; /* Цвет заголовков в карусели */
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Тень для лучшей читаемости */
+}
+
+.carousel-caption p {
+    font-family: 'Open Sans', sans-serif; /* Применяем новый шрифт */
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Дополнительно, чтобы навигация не перекрывала контент */
+.navbar {
+    z-index: 1000; /* Убедимся, что навигация поверх всего */
+}
