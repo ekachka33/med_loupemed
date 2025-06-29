@@ -32,11 +32,11 @@
                         <a class="nav-link" href="{% url 'core:service_list' %}">Услуги</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Контакты</a> {# Пока заглушка #}
+                        <a class="nav-link" href="{% url 'core:contact' %}">Контакты</a>
                     </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Личный кабинет</a> {# Пока заглушка, создадим позже #}
+                        <a class="nav-link" href="{% url 'core:profile' %}">Личный кабинет</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'accounts:logout' %}">Выйти</a>
@@ -79,7 +79,7 @@
                     <li><a href="{% url 'core:about' %}" class="text-dark">О клинике</a></li>
                     <li><a href="#" class="text-dark">Услуги</a></li>
                     <li><a href="{% url 'core:about' %}" class="text-dark">Врачи</a></li>
-                    <li><a href="#" class="text-dark">Контакты</a></li>
+                    <li><a href="{% url 'core:contact' %}" class="text-dark">Контакты</a></li>
                 </ul>
             </div>
             <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
@@ -100,23 +100,34 @@
     </div>
 </footer>
 
-    <div class="modal fade" id="callbackModal" tabindex="-1" aria-labelledby="callbackModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="callbackModalLabel">Обратный звонок</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    {# Здесь будет форма обратного звонка #}
-                    <p>Форма обратного звонка будет здесь...</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                </div>
+   <div class="modal fade" id="callbackModal" tabindex="-1" aria-labelledby="callbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="callbackModalLabel">Связаться с нами</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Оставьте нам сообщение, и мы свяжемся с вами в ближайшее время.</p>
+                <form id="contactForm" method="post" action="{% url 'core:submit_feedback' %}">
+                    {% csrf_token %}
+                    {% for field in contact_form %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                            {% if field.errors %}<div class="text-danger">{{ field.errors }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary">Отправить сообщение</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
             </div>
         </div>
     </div>
+</div>
 
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
         </div>
@@ -153,6 +164,62 @@
                 toastElement.remove();
             });
         }
+
+        // JavaScript для обработки отправки формы через AJAX
+        document.addEventListener('DOMContentLoaded', function() {
+            const contactForm = document.getElementById('contactForm'); // Это форма в callbackModal
+            if (contactForm) {
+                contactForm.addEventListener('submit', function(e) {
+                    e.preventDefault(); // Предотвращаем стандартную отправку формы
+
+                    const formData = new FormData(contactForm);
+                    const actionUrl = contactForm.getAttribute('action');
+
+                    fetch(actionUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest', // Важно для Django
+                            'X-CSRFToken': formData.get('csrfmiddlewaretoken') // Токен CSRF
+                        }
+                    })
+                    .then(response => {
+                        // Клонируем ответ, чтобы использовать его дважды (для .ok и .json())
+                        const clonedResponse = response.clone();
+                        return clonedResponse.json().then(data => ({
+                            ok: response.ok,
+                            status: response.status,
+                            data: data
+                        }));
+                    })
+                    .then(({ ok, status, data }) => {
+                        if (ok) {
+                            showToast(data.message, 'success');
+                            contactForm.reset(); // Очистить форму после успешной отправки
+                            const callbackModal = bootstrap.Modal.getInstance(document.getElementById('callbackModal')); // ИЗМЕНЕНО: callbackModal
+                            if (callbackModal) {
+                                callbackModal.hide(); // Закрыть модальное окно
+                            }
+                        } else {
+                            // Обработка ошибок валидации или серверных ошибок
+                            let errorMessage = 'Ошибка отправки формы:';
+                            if (data.errors) {
+                                for (const field in data.errors) {
+                                    errorMessage += `\n${field}: ${data.errors[field].join(', ')}`;
+                                }
+                            } else if (data.message) {
+                                errorMessage = data.message;
+                            }
+                            showToast(errorMessage, 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка AJAX:', error);
+                        showToast('Произошла ошибка сети. Пожалуйста, попробуйте позже.', 'danger');
+                    });
+                });
+            }
+        });
     </script>
 
     {% block extra_js %}{% endblock %}

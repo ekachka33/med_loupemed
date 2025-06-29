@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
+from django.contrib.auth.models import User
 
 class ContactRequest(models.Model):
     """
@@ -49,8 +50,8 @@ class ContactInfo(models.Model):
     Модель для хранения контактной информации компании.
     Предполагается, что будет только одна запись этой модели.
     """
-    name = models.CharField(max_length=200, verbose_name="Название клиники", default="Медицинская Клиника") # Добавлено
-    short_description = models.TextField(blank=True, verbose_name="Краткое описание/Миссия") # Добавлено
+    name = models.CharField(max_length=200, verbose_name="Название клиники", default="Медицинская Клиника")
+    short_description = models.TextField(blank=True, verbose_name="Краткое описание/Миссия")
 
     address = models.CharField(max_length=255, verbose_name="Адрес")
     phone_number_main = models.CharField(max_length=20, verbose_name="Основной номер телефона")
@@ -58,7 +59,7 @@ class ContactInfo(models.Model):
     email_main = models.EmailField(verbose_name="Основной Email")
     email_alt = models.EmailField(blank=True, null=True, verbose_name="Дополнительный Email")
     work_hours = models.CharField(max_length=255, verbose_name="Часы работы", help_text="ПН-ПТ 9:00-18:00")
-    map_link = models.URLField(blank=True, null=True, verbose_name="Ссылка на карту (Google Maps/Yandex Maps)")
+    map_link = models.CharField(max_length=500, blank=True, null=True, verbose_name="Ссылка на карту (Google Maps/Yandex Maps)")
     facebook_link = models.URLField(blank=True, null=True, verbose_name="Ссылка на Facebook")
     instagram_link = models.URLField(blank=True, null=True, verbose_name="Ссылка на Instagram")
     is_active = models.BooleanField(default=True, verbose_name="Активная запись")
@@ -76,10 +77,11 @@ class ContactInfo(models.Model):
 
 
 class Doctor(models.Model):
-    """
-    Модель для хранения информации о врачах.
-    """
-    full_name = models.CharField(max_length=255, verbose_name="Полное имя")
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name='doctor_profile', verbose_name='Пользователь (аккаунт врача)')
+
+
+    name = models.CharField(max_length=255, verbose_name="Полное имя")
     specialty = models.CharField(max_length=100, verbose_name="Специализация")
     bio = models.TextField(blank=True, verbose_name="Биография")
     photo = models.ImageField(upload_to='doctors/', blank=True, null=True, verbose_name="Фотография")
@@ -92,11 +94,10 @@ class Doctor(models.Model):
     class Meta:
         verbose_name = "Врач"
         verbose_name_plural = "Врачи"
-        ordering = ['full_name']
+        ordering = ['name']
 
     def __str__(self):
-        return f"{self.full_name} ({self.specialty})"
-
+        return f"{self.name} ({self.specialty})"
 
 
 class Review(models.Model):
@@ -128,7 +129,7 @@ class Review(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Отзыв от {self.full_name} на {self.rating} звезд (Врач: {self.doctor.full_name if self.doctor else 'Общий'})"
+        return f"Отзыв от {self.full_name} на {self.rating} звезд (Врач: {self.doctor.name if self.doctor else 'Общий'})"
 
 
 class ServiceCategory(models.Model):
@@ -170,22 +171,40 @@ class Service(models.Model):
                                          help_text="Короткое описание услуги, до 200 символов.")
     full_description = models.TextField(verbose_name="Полное описание (для детальной страницы)")
 
-    # Можно использовать DecimalField для цен, так как это точнее, чем FloatField
-    # Можно оставить price, если цена всегда одна, или использовать min/max для диапазона
     base_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,
                                      verbose_name="Базовая цена",
                                      help_text="Оставьте пустым, если цена варьируется (см. пункты прайс-листа).")
+
+    duration_minutes = models.IntegerField(default=30, verbose_name="Примерная длительность услуги (минут)",
+                                           help_text="Используется для расчета доступных слотов для записи.")
 
     is_active = models.BooleanField(default=True, verbose_name="Активна")
     image = models.ImageField(upload_to='service_images/', blank=True, null=True,
                               verbose_name="Изображение услуги")
 
-    # Связь с моделью Doctor (предполагаем, что Doctor уже существует)
     doctors = models.ManyToManyField('Doctor', blank=True, related_name='services',
                                      verbose_name="Врачи, предоставляющие услугу")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Услуга"
+        verbose_name_plural = "Услуги"
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+            original_slug = self.slug
+            count = 1
+            while Service.objects.filter(slug=self.slug).exists():
+                self.slug = f"{original_slug}-{count}"
+                count += 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         verbose_name = "Услуга"
@@ -223,3 +242,70 @@ class ServicePriceItem(models.Model):
 
     def __str__(self):
         return f"{self.service.name} - {self.item_name}"
+
+
+class Appointment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments', verbose_name='Пациент')
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='appointments', verbose_name='Врач')
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='appointments', verbose_name='Услуга')
+    date = models.DateField(verbose_name='Дата приема')
+    time = models.TimeField(verbose_name='Время приема')
+    # Статусы записи:
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает подтверждения'),
+        ('confirmed', 'Подтверждено'),
+        ('completed', 'Завершено'),
+        ('cancelled', 'Отменено'),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name='Статус')
+    comments = models.TextField(blank=True, null=True, verbose_name='Комментарии пациента')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата последнего изменения')
+    # Поле для результатов диагностики (только для врачей)
+    diagnosis_results = models.TextField(blank=True, null=True, verbose_name='Результаты диагностики')
+
+
+    class Meta:
+        ordering = ['-date', '-time'] # Сортировка по дате и времени
+        # Запрет на запись к одному врачу в одно и то же время
+        # Это базовая уникальность, более сложная логика будет в views
+        unique_together = ('doctor', 'date', 'time')
+
+    def __str__(self):
+        return f"Запись {self.user.username} к {self.doctor.name} на {self.date} в {self.time}"
+
+    # Метод для определения, прошло ли время записи
+    def is_past_appointment(self):
+        import datetime
+        now = datetime.datetime.now().time()
+        today = datetime.date.today()
+        if self.date < today:
+            return True
+        elif self.date == today and self.time < now:
+            return True
+        return False
+
+    # Метод для определения, скоро ли запись (например, в ближайшие 24 часа)
+    def is_upcoming_appointment(self):
+        import datetime
+        now = datetime.datetime.now()
+        appointment_datetime = datetime.datetime.combine(self.date, self.time)
+        time_difference = appointment_datetime - now
+        return datetime.timedelta(hours=0) < time_difference < datetime.timedelta(hours=24) # Запись в ближайшие 24 часа
+
+
+class DoctorSchedule(models.Model):
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='schedules', verbose_name='Врач')
+    date = models.DateField(verbose_name='Дата')
+    start_time = models.TimeField(verbose_name='Время начала')
+    end_time = models.TimeField(verbose_name='Время окончания')
+    # Можно добавить интервалы (например, 15, 30 минут)
+    # interval_minutes = models.IntegerField(default=30)
+
+    class Meta:
+        # Врач не может быть доступен дважды в одно и то же время на одну дату
+        unique_together = ('doctor', 'date', 'start_time', 'end_time')
+        ordering = ['date', 'start_time']
+
+    def __str__(self):
+        return f"Расписание {self.doctor.name} на {self.date}: {self.start_time}-{self.end_time}"

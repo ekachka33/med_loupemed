@@ -42,12 +42,18 @@ class ContactInfoAdmin(admin.ModelAdmin):
 
 @admin.register(Doctor)
 class DoctorAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'specialty', 'experience_years', 'is_active', 'updated_at')
+    list_display = ('id', 'name', 'specialty', 'experience_years', 'is_active', 'user', 'updated_at')
     list_filter = ('specialty', 'is_active')
-    search_fields = ('full_name', 'specialty', 'bio')
+    search_fields = ('name', 'specialty', 'bio', 'user__username')
+    raw_id_fields = ('user',)
+
     fieldsets = (
         (None, {
-            'fields': ('full_name', 'specialty', 'photo', 'is_active')
+            'fields': ('name', 'specialty', 'photo', 'is_active')
+        }),
+        ('Пользовательский аккаунт', { # <-- НОВАЯ ГРУППА ДЛЯ ПОЛЯ USER
+            'fields': ('user',),
+            'description': 'Привяжите профиль врача к аккаунту пользователя, если этот врач будет входить в систему.'
         }),
         ('Подробная информация', {
             'fields': ('bio', 'experience_years', 'education')
@@ -59,7 +65,7 @@ class DoctorAdmin(admin.ModelAdmin):
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ('full_name', 'doctor', 'rating', 'is_approved', 'created_at')
     list_filter = ('doctor', 'is_approved', 'rating')
-    search_fields = ('full_name', 'text')
+    search_fields = ('full_name', 'text', 'name')
     readonly_fields = ('created_at',)
     actions = ['approve_reviews', 'disapprove_reviews']
 

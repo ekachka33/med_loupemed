@@ -74,14 +74,14 @@
                             <div class="row g-0">
                                 <div class="col-4">
                                     {% if doctor.photo %}
-                                        <img src="{{ doctor.photo.url }}" class="img-fluid rounded-start h-100" alt="{{ doctor.full_name }}" style="object-fit: cover;">
+                                        <img src="{{ doctor.photo.url }}" class="img-fluid rounded-start h-100" alt="{{ doctor.name }}" style="object-fit: cover;">
                                     {% else %}
                                         <img src="{% static 'img/doctor_placeholder.jpg' %}" class="img-fluid rounded-start h-100" alt="Фото врача" style="object-fit: cover;">
                                     {% endif %}
                                 </div>
                                 <div class="col-8">
                                     <div class="card-body">
-                                        <h6 class="card-title">{{ doctor.full_name }}</h6>
+                                        <h6 class="card-title">{{ doctor.name }}</h6>
                                         <p class="card-text"><small class="text-muted">{{ doctor.specialty }}</small></p>
                                         <a href="{% url 'core:doctor_detail' pk=doctor.pk %}" class="btn btn-sm btn-outline-secondary">Профиль</a>
                                     </div>

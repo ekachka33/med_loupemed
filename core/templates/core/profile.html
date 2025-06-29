@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center mb-4">{{ title }}</h1>
+
+    {% if user.is_authenticated %}
+        <div class="card shadow-sm p-4">
+            <h2 class="mb-3">Добро пожаловать, {{ user.first_name|default:user.username }}!</h2>
+
+            {% if is_doctor %}
+                <p class="lead">Вы вошли как **Врач**: {{ doctor_profile.name }} ({{ doctor_profile.specialty }})</p>
+                <hr>
+                <h4>Панель врача:</h4>
+                <ul>
+                    <li><a href="#">Управление расписанием (будет реализовано)</a></li>
+                    <li><a href="#">Просмотр записей (будет реализовано)</a></li>
+                </ul>
+            {% else %}
+                <p class="lead">Вы вошли как **Пациент**.</p>
+                <hr>
+                <h4>Панель пациента:</h4>
+                <ul>
+                    <li><a href="#">Запись на прием (будет реализовано)</a></li>
+                    <li><a href="#">История записей и результаты диагностики (будет реализовано)</a></li>
+                </ul>
+            {% endif %}
+
+            <div class="mt-4">
+                <a href="{% url 'accounts:logout' %}" class="btn btn-outline-danger">Выйти</a>
+            </div>
+        </div>
+    {% else %}
+        {# Это сообщение не должно отображаться благодаря @login_required, но оставлю на всякий случай #}
+        <div class="alert alert-warning text-center" role="alert">
+            Для доступа к личному кабинету необходимо <a href="{% url 'accounts:login' %}?next={{ request.path }}">войти</a> или <a href="{% url 'accounts:register' %}">зарегистрироваться</a>.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

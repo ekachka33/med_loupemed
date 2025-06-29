@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {# Исправлена опечатка здесь: убран лишний {{ #}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block title %}О клинике - Медицинская клиника{% endblock %}
@@ -36,12 +36,12 @@
                 {# Делаем всю карточку кликабельной #}
                 <a href="{% url 'core:doctor_detail' pk=doctor.pk %}" class="card h-100 shadow-sm text-decoration-none text-dark">
                     {% if doctor.photo %}
-                        <img src="{{ doctor.photo.url }}" class="card-img-top" alt="{{ doctor.full_name }}" style="height: 250px; object-fit: cover;">
+                        <img src="{{ doctor.photo.url }}" class="card-img-top" alt="{{ doctor.name }}" style="height: 250px; object-fit: cover;">
                     {% else %}
                         <img src="{% static 'img/doctor_placeholder.jpg' %}" class="card-img-top" alt="Фото врача" style="height: 250px; object-fit: cover;">
                     {% endif %}
                     <div class="card-body text-center">
-                        <h5 class="card-title">{{ doctor.full_name }}</h5>
+                        <h5 class="card-title">{{ doctor.name }}</h5>
                         <p class="card-text text-muted">{{ doctor.specialty }}</p>
                         <p class="card-text"><small>Опыт: {{ doctor.experience_years }} лет</small></p>
                     </div>
@@ -66,7 +66,7 @@
                             <p class="card-text">
                                 <small class="text-muted">От: {{ review.full_name }}</small>
                                 {% if review.doctor %}
-                                <br><small class="text-muted">О враче: {{ review.doctor.full_name }}</small>
+                                <br><small class="text-muted">О враче: {{ review.doctor.name }}</small>
                                 {% endif %}
                                 <br><small class="text-muted">Оценка: {{ review.rating }} из 5</small>
                             </p>

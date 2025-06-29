@@ -1,20 +1,20 @@
+# med_loupemed/core/forms.py
+
 from django import forms
 from .models import Review, Doctor
 
 class ReviewForm(forms.ModelForm):
-    # Переопределяем поле doctor, чтобы оно было необязательным для общего отзыва
-    # и использовало ChoiceField для выбора врача из списка.
-    # Это также пригодится для формы на doctor_detail.html
+
     doctor = forms.ModelChoiceField(
-        queryset=Doctor.objects.filter(is_active=True).order_by('full_name'),
-        required=False, # Сделать поле необязательным
-        empty_label="Выберите врача (необязательно)", # Текст для пустого значения
+        queryset=Doctor.objects.filter(is_active=True).order_by('name'),
+        required=False,
+        empty_label="Выберите врача (необязательно)",
         label="Врач"
     )
     rating = forms.IntegerField(
         min_value=1,
         max_value=5,
-        widget=forms.HiddenInput() # Будем использовать JS для красивого отображения звезд
+        widget=forms.HiddenInput()
     )
 
     class Meta:
@@ -29,5 +29,23 @@ class ReviewForm(forms.ModelForm):
             'full_name': 'Ваше имя',
             'email': 'Ваш Email',
             'text': 'Текст отзыва',
-            # 'doctor' уже задан выше
         }
+
+
+class ContactForm(forms.Form):
+    name = forms.CharField(max_length=100, label="Ваше имя")
+    email = forms.EmailField(required=False, label="Ваш Email") # Сделал email необязательным, если телефон есть
+    phone_number = forms.CharField(max_length=20, required=False, label="Ваш телефон", help_text="Мы свяжемся с вами по телефону или email.") # Новое поле
+    message = forms.CharField(widget=forms.Textarea, label="Ваше сообщение")
+
+    # Добавим кастомную валидацию, чтобы требовать хотя бы email или телефон
+    def clean(self):
+        cleaned_data = super().clean()
+        email = cleaned_data.get('email')
+        phone_number = cleaned_data.get('phone_number')
+
+        if not email and not phone_number:
+            raise forms.ValidationError(
+                "Пожалуйста, укажите хотя бы свой Email или номер телефона для связи."
+            )
+        return cleaned_data

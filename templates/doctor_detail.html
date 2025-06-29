@@ -1,18 +1,18 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ doctor.full_name }} - {{ doctor.specialty }}{% endblock %}
+{% block title %}{{ doctor.name }} - {{ doctor.specialty }}{% endblock %}
 
 {% block content %}
 <div class="container my-5">
     <div class="row">
         <div class="col-md-4 text-center">
             {% if doctor.photo %}
-                <img src="{{ doctor.photo.url }}" class="img-fluid rounded-circle mb-3" alt="{{ doctor.full_name }}" style="width: 200px; height: 200px; object-fit: cover;">
+                <img src="{{ doctor.photo.url }}" class="img-fluid rounded-circle mb-3" alt="{{ doctor.name }}" style="width: 200px; height: 200px; object-fit: cover;">
             {% else %}
                 <img src="{% static 'img/doctor_placeholder.jpg' %}" class="img-fluid rounded-circle mb-3" alt="Фото врача" style="width: 200px; height: 200px; object-fit: cover;">
             {% endif %}
-            <h3>{{ doctor.full_name }}</h3>
+            <h3>{{ doctor.name }}</h3>
             <p class="text-muted">{{ doctor.specialty }}</p>
             <p>Опыт работы: {{ doctor.experience_years }} лет</p>
         </div>
@@ -28,7 +28,7 @@
             <hr>
 
             {# Секция Отзывов для этого врача #}
-            <h4 class="mb-3">Отзывы о {{ doctor.full_name }}</h4>
+            <h4 class="mb-3">Отзывы о {{ doctor.name }}</h4>
             {% if reviews %}
                 {% for review in reviews %}
                     <div class="card mb-3 shadow-sm">
@@ -54,7 +54,7 @@
             {# Кнопка "Оставить отзыв" для конкретного врача #}
             <div class="text-center mt-4">
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">
-                    Оставить отзыв о {{ doctor.full_name }}
+                    Оставить отзыв о {{ doctor.name }}
                 </button>
             </div>
 
@@ -67,7 +67,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="reviewModalLabel">Оставить отзыв о {{ doctor.full_name }}</h5>
+                <h5 class="modal-title" id="reviewModalLabel">Оставить отзыв о {{ doctor.name }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">

@@ -10,5 +10,7 @@ urlpatterns = [
     path('submit-review/', views.submit_review, name='submit_review'),
     path('services/', views.service_list, name='service_list'),
     path('services/<slug:slug>/', views.service_detail, name='service_detail'),
-    # path('contact/', views.contact_view, name='contact'),
+    path('contact/', views.contact_page, name='contact'),
+    path('submit-feedback/', views.submit_feedback, name='submit_feedback'),
+    path('profile/', views.profile_view, name='profile'),
 ]
