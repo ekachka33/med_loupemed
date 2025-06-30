@@ -91,6 +91,21 @@ class Doctor(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    default_start_time = models.TimeField(
+        null=True, blank=True, verbose_name="Стандартное время начала работы",
+        help_text="Если указано, будет использоваться для генерации расписания по умолчанию."
+    )
+    default_end_time = models.TimeField(
+        null=True, blank=True, verbose_name="Стандартное время окончания работы",
+        help_text="Если указано, будет использоваться для генерации расписания по умолчанию."
+    )
+    default_interval_minutes = models.IntegerField(
+        default=30, verbose_name="Стандартный интервал приема (мин)",
+        help_text="Используется для генерации слотов для записи по умолчанию. Минимум 5 минут."
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         verbose_name = "Врач"
         verbose_name_plural = "Врачи"
@@ -206,24 +221,6 @@ class Service(models.Model):
     def __str__(self):
         return self.name
 
-    class Meta:
-        verbose_name = "Услуга"
-        verbose_name_plural = "Услуги"
-        ordering = ['name']
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
-            original_slug = self.slug
-            count = 1
-            while Service.objects.filter(slug=self.slug).exists():
-                self.slug = f"{original_slug}-{count}"
-                count += 1
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.name
-
 
 class ServicePriceItem(models.Model):
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='price_items',
@@ -242,7 +239,6 @@ class ServicePriceItem(models.Model):
 
     def __str__(self):
         return f"{self.service.name} - {self.item_name}"
-
 
 class Appointment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments', verbose_name='Пациент')
@@ -264,17 +260,15 @@ class Appointment(models.Model):
     # Поле для результатов диагностики (только для врачей)
     diagnosis_results = models.TextField(blank=True, null=True, verbose_name='Результаты диагностики')
 
-
     class Meta:
-        ordering = ['-date', '-time'] # Сортировка по дате и времени
-        # Запрет на запись к одному врачу в одно и то же время
-        # Это базовая уникальность, более сложная логика будет в views
+        ordering = ['-date', '-time']
         unique_together = ('doctor', 'date', 'time')
+        verbose_name = 'Запись на прием'
+        verbose_name_plural = 'Записи на прием'
 
     def __str__(self):
         return f"Запись {self.user.username} к {self.doctor.name} на {self.date} в {self.time}"
 
-    # Метод для определения, прошло ли время записи
     def is_past_appointment(self):
         import datetime
         now = datetime.datetime.now().time()
@@ -285,7 +279,6 @@ class Appointment(models.Model):
             return True
         return False
 
-    # Метод для определения, скоро ли запись (например, в ближайшие 24 часа)
     def is_upcoming_appointment(self):
         import datetime
         now = datetime.datetime.now()
@@ -299,13 +292,15 @@ class DoctorSchedule(models.Model):
     date = models.DateField(verbose_name='Дата')
     start_time = models.TimeField(verbose_name='Время начала')
     end_time = models.TimeField(verbose_name='Время окончания')
-    # Можно добавить интервалы (например, 15, 30 минут)
-    # interval_minutes = models.IntegerField(default=30)
+    interval_minutes = models.IntegerField(default=30, verbose_name='Длительность сеанса (мин)',)
 
     class Meta:
         # Врач не может быть доступен дважды в одно и то же время на одну дату
         unique_together = ('doctor', 'date', 'start_time', 'end_time')
         ordering = ['date', 'start_time']
+        verbose_name = 'Расписание врача'
+        verbose_name_plural = 'Расписание врачей'
+
 
     def __str__(self):
         return f"Расписание {self.doctor.name} на {self.date}: {self.start_time}-{self.end_time}"

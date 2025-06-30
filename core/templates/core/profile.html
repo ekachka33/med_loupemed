@@ -11,32 +11,48 @@
         <div class="card shadow-sm p-4">
             <h2 class="mb-3">Добро пожаловать, {{ user.first_name|default:user.username }}!</h2>
 
-            {% if is_doctor %}
+            {# НАЧАЛО ОБНОВЛЕННОГО БЛОКА ЛОГИКИ ОТОБРАЖЕНИЯ РОЛИ #}
+            {% if user.is_superuser %}
+                <p class="lead">Вы вошли как **Администратор**.</p>
+                <hr>
+                <h4>Панель администратора:</h4>
+                <ul>
+                    <li><a href="{% url 'admin:index' %}">Перейти в панель администратора</a></li>
+                </ul>
+            {% elif doctor_profile %} {# Проверяем, является ли пользователь доктором (наличие doctor_profile) #}
                 <p class="lead">Вы вошли как **Врач**: {{ doctor_profile.name }} ({{ doctor_profile.specialty }})</p>
                 <hr>
                 <h4>Панель врача:</h4>
                 <ul>
-                    <li><a href="#">Управление расписанием (будет реализовано)</a></li>
-                    <li><a href="#">Просмотр записей (будет реализовано)</a></li>
+                    <li><a href="{% url 'core:doctor_schedule' %}">Мое расписание и записи</a></li>
+                    <li><a href="#">Просмотр пациентов (будет реализовано)</a></li>
                 </ul>
-            {% else %}
+            {% elif user.is_staff %} {# Если не суперпользователь и не доктор, но является сотрудником #}
+                <p class="lead">Вы вошли как **Сотрудник**.</p>
+                <hr>
+                <h4>Панель сотрудника:</h4>
+                <ul>
+                    <li><a href="{% url 'admin:index' %}">Доступ к админ-панели (если есть права)</a></li>
+                </ul>
+            {% else %} {# Если ни одна из вышеперечисленных ролей не подходит, значит, это Пациент #}
                 <p class="lead">Вы вошли как **Пациент**.</p>
                 <hr>
                 <h4>Панель пациента:</h4>
                 <ul>
-                    <li><a href="#">Запись на прием (будет реализовано)</a></li>
-                    <li><a href="#">История записей и результаты диагностики (будет реализовано)</a></li>
+                    <li><a href="{% url 'core:make_appointment' %}">Записаться на прием</a></li> {# Пациент записывается сам #}
+                    <li><a href="#">Мои записи (будет реализовано)</a></li>
+                    <li><a href="#">Мои результаты диагностики (будет реализовано)</a></li>
                 </ul>
             {% endif %}
 
-            <div class="mt-4">
-                <a href="{% url 'accounts:logout' %}" class="btn btn-outline-danger">Выйти</a>
-            </div>
+            <hr>
         </div>
     {% else %}
-        {# Это сообщение не должно отображаться благодаря @login_required, но оставлю на всякий случай #}
         <div class="alert alert-warning text-center" role="alert">
-            Для доступа к личному кабинету необходимо <a href="{% url 'accounts:login' %}?next={{ request.path }}">войти</a> или <a href="{% url 'accounts:register' %}">зарегистрироваться</a>.
+            Для доступа к личному кабинету необходимо
+            <a href="{% url 'accounts:login' %}?next={{ request.path }}">войти</a>
+            или
+            <a href="{% url 'accounts:register' %}">зарегистрироваться</a>.
         </div>
     {% endif %}
 </div>

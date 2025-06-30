@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title> {# Используем title из контекста #}
+    <style>
+        /* Базовые стили для демонстрации. Используйте свои стили. */
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 800px; margin: 30px auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        h1, h2 { text-align: center; color: #007bff; margin-bottom: 25px; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin-bottom: 15px; padding: 15px; border: 1px solid #eee; border-radius: 8px; background-color: #f9f9f9; }
+        /* .schedule-item { background-color: #e6f7ff; border-left: 5px solid #007bff; } */ /* Этот стиль больше не нужен */
+        .appointment-item { background-color: #ffe0b2; border-left: 5px solid #ff9800; }
+        .no-data { color: #666; font-style: italic; text-align: center; padding: 20px; }
+        .go-back-link { display: block; text-align: center; margin-top: 30px; font-size: 1.1em; color: #007bff; text-decoration: none; }
+        .go-back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Расписание врача: {{ doctor.user.get_full_name }}</h1> {# Используем doctor.user.get_full_name #}
+        <p style="text-align: center; color: #666;">Специальность: {{ doctor.specialty }}</p> {# Используем doctor.specialization #}
+
+
+        <h2>Предстоящие записи на сегодня {{ 'now'|date:"d.m.Y" }}</h2>
+        {% if today_appointments %} {# Изменено с 'upcoming_appointments' на 'today_appointments' #}
+            <ul>
+                {% for appointment in today_appointments %} {# Изменено с 'upcoming_appointments' на 'today_appointments' #}
+                    <li class="appointment-item">
+                        <strong>Время:</strong> {{ appointment.time|time:"H:i" }} <br> {# Дата уже указана в заголовке, убрал здесь #}
+                        <strong>Услуга:</strong> {{ appointment.service.name }} <br>
+                        <strong>Клиент:</strong> {{ appointment.user.get_full_name|default:appointment.user.username }} ({{ appointment.user.email|default:"Email не указан" }})<br> {# Более полное имя и обработка отсутствия email #}
+                        <strong>Статус:</strong> {{ appointment.get_status_display }}
+                        {% if appointment.comments %}
+                            <p><strong>Комментарии:</strong> {{ appointment.comments }}</p>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="no-data">На сегодня нет запланированных записей.</p> {# Изменено сообщение #}
+        {% endif %}
+
+        <a href="{% url 'core:profile' %}" class="go-back-link">Вернуться в личный кабинет</a>
+    </div>
+</body>
+</html>

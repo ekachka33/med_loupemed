@@ -1,7 +1,7 @@
 # med_loupemed/core/forms.py
 
 from django import forms
-from .models import Review, Doctor
+from .models import Review, Doctor, DoctorSchedule, Appointment, Service, User
 
 class ReviewForm(forms.ModelForm):
 
@@ -34,7 +34,7 @@ class ReviewForm(forms.ModelForm):
 
 class ContactForm(forms.Form):
     name = forms.CharField(max_length=100, label="Ваше имя")
-    email = forms.EmailField(required=False, label="Ваш Email") # Сделал email необязательным, если телефон есть
+    email = forms.EmailField(required=False, label="Ваш Email")
     phone_number = forms.CharField(max_length=20, required=False, label="Ваш телефон", help_text="Мы свяжемся с вами по телефону или email.") # Новое поле
     message = forms.CharField(widget=forms.Textarea, label="Ваше сообщение")
 
@@ -48,4 +48,64 @@ class ContactForm(forms.Form):
             raise forms.ValidationError(
                 "Пожалуйста, укажите хотя бы свой Email или номер телефона для связи."
             )
+        return cleaned_data
+
+
+class AppointmentAdminForm(forms.ModelForm):
+    class Meta:
+        model = Appointment
+        fields = '__all__'
+        widgets = {
+            'time': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
+            'date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
+        }
+
+class DoctorScheduleAdminForm(forms.ModelForm):
+    class Meta:
+        model = DoctorSchedule
+        fields = '__all__'
+        widgets = {
+            'start_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
+            'end_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
+            'date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
+        }
+
+
+class UserAppointmentForm(forms.ModelForm):
+    doctor = forms.ModelChoiceField(
+        queryset=Doctor.objects.filter(is_active=True).order_by('name'),
+        label="Врач",
+        empty_label="Выберите врача"
+    )
+    service = forms.ModelChoiceField(
+        queryset=Service.objects.filter(is_active=True).order_by('name'),
+        label="Услуга",
+        empty_label="Выберите услугу"
+    )
+    date = forms.DateField(
+        label="Дата приема",
+        # type="text" нужен для Flatpickr, который сам превратит его в интерактивный календарь
+        widget=forms.DateInput(attrs={'type': 'text', 'placeholder': 'Выберите дату', 'class': 'form-control datepicker-input'}),
+        input_formats=['%Y-%m-%d', '%m/%d/%Y', '%d.%m.%Y']
+    )
+    time = forms.TimeField(
+        label="Время приема",
+        # Select будет динамически заполняться через AJAX
+        widget=forms.Select(attrs={'class': 'form-control time-slots-select', 'disabled': 'disabled'}), # Изначально отключено
+        required=False
+    )
+    comments = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 3, 'placeholder': 'Дополнительные комментарии...'}),
+        required=False,
+        label="Комментарии"
+    )
+
+    class Meta:
+        model = Appointment
+        fields = ['doctor', 'service', 'date', 'time', 'comments']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data.get('time') and self.is_bound:
+            self.add_error('time', 'Пожалуйста, выберите доступное время приема.')
         return cleaned_data

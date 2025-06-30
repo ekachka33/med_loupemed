@@ -45,7 +45,7 @@
                         <p class="card-text text-muted">{{ doctor.specialty }}</p>
                         <p class="card-text"><small>Опыт: {{ doctor.experience_years }} лет</small></p>
                     </div>
-                </a> {# Закрываем тег <a> #}
+                </a>
             </div>
             {% endfor %}
         </div>
@@ -111,7 +111,7 @@
                             <label for="{{ form.full_name.id_for_label }}" class="form-label">{{ form.full_name.label }}</label>
                             {{ form.full_name }}
                             {% if form.full_name.errors %}
-                                <div class="text-danger">{{ form.full_name.errors.0 }}</div> {# .0 чтобы вывести только первое сообщение об ошибке #}
+                                <div class="text-danger">{{ form.full_name.errors.0 }}</div>
                             {% endif %}
                         </div>
                         <div class="mb-3">
