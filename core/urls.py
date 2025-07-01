@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import MakeAppointmentView, GetAvailableTimeSlotsView, UserAppointmentsView
+from .views import UserAppointmentsView
 
 app_name = 'core'
 
@@ -20,6 +20,8 @@ urlpatterns = [
     path('get-services-for-doctor/', views.get_services_for_doctor, name='get_services_for_doctor'),
     path('profile/my-appointments/', UserAppointmentsView.as_view(), name='my_appointments'),
     path('doctor/panel/', views.doctor_panel, name='doctor_panel'),
+    path('faq/', views.faq_page, name='faq'),
+    path('submit-question/', views.submit_question, name='submit_question'),
 
 ]
 

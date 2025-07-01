@@ -1,13 +1,11 @@
 from datetime import timedelta
-
 from django.contrib import admin, messages
 from django.shortcuts import render, redirect
 from django.urls import path, reverse
-from django import forms
 from .models import (
     ContactRequest, AboutUsPage, ContactInfo, Doctor, Review,
     ServiceCategory, Service, ServicePriceItem,
-    Appointment, DoctorSchedule, MedicalRecord
+    Appointment, DoctorSchedule, MedicalRecord, FAQItem
 )
 
 from .forms import AppointmentAdminForm, DoctorScheduleAdminForm
@@ -15,9 +13,15 @@ from .admin_forms import GenerateScheduleForm
 
 @admin.register(ContactRequest)
 class ContactRequestAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'email', 'phone_number', 'request_type', 'created_at', 'is_processed')
+    list_display = (
+       'full_name', 'email', 'phone_number',
+       'request_type', 'created_at', 'is_processed'
+    )
     list_filter = ('request_type', 'is_processed', 'created_at')
-    search_fields = ('full_name', 'email', 'phone_number', 'message')
+    search_fields = (
+        'full_name', 'email',
+        'phone_number', 'message'
+    )
     readonly_fields = ('created_at',)
     actions = ['mark_as_processed']
 
@@ -26,16 +30,17 @@ class ContactRequestAdmin(admin.ModelAdmin):
     mark_as_processed.short_description = "Отметить выбранные запросы как обработанные"
 
 
-# Регистрация модели AboutUsPage
 @admin.register(AboutUsPage)
 class AboutUsPageAdmin(admin.ModelAdmin):
     list_display = ('title', 'last_updated')
 
 
-# Регистрация модели ContactInfo
 @admin.register(ContactInfo)
 class ContactInfoAdmin(admin.ModelAdmin):
-    list_display = ('name', 'phone_number_main', 'email_main', 'is_active', 'updated_at')
+    list_display = (
+        'name', 'phone_number_main',
+        'email_main', 'is_active', 'updated_at'
+    )
     list_filter = ('is_active',)
     search_fields = ('name', 'address', 'phone_number_main', 'email_main')
     fieldsets = (
@@ -43,7 +48,10 @@ class ContactInfoAdmin(admin.ModelAdmin):
             'fields': ('name', 'short_description', 'is_active')
         }),
         ('Контактные данные', {
-            'fields': ('address', 'phone_number_main', 'phone_number_alt', 'email_main', 'email_alt', 'work_hours')
+            'fields': (
+                'address', 'phone_number_main', 'phone_number_alt',
+                'email_main', 'email_alt', 'work_hours'
+            )
         }),
         ('Социальные сети и карта', {
             'fields': ('map_link', 'facebook_link', 'instagram_link')
@@ -77,7 +85,6 @@ class DoctorAdmin(admin.ModelAdmin):
     )
 
 
-
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ('full_name', 'doctor', 'rating', 'text', 'is_approved', 'created_at')
@@ -95,11 +102,11 @@ class ReviewAdmin(admin.ModelAdmin):
     disapprove_reviews.short_description = "Отклонить выбранные отзывы"
 
 
-# Inline для ServicePriceItem, чтобы добавлять цены прямо на странице Service
 class ServicePriceItemInline(admin.TabularInline):
     model = ServicePriceItem
     extra = 1
     fields = ('item_name', 'price', 'unit', 'order')
+
 
 @admin.register(ServiceCategory)
 class ServiceCategoryAdmin(admin.ModelAdmin):
@@ -107,6 +114,7 @@ class ServiceCategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     search_fields = ('name', 'description')
     list_editable = ('order',)
+
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
@@ -142,8 +150,6 @@ class AppointmentAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
     actions = ['mark_confirmed', 'mark_completed', 'mark_cancelled']
 
-
-
     def mark_confirmed(self, request, queryset):
         queryset.update(status='confirmed')
     mark_confirmed.short_description = "Отметить как подтвержденные"
@@ -157,17 +163,15 @@ class AppointmentAdmin(admin.ModelAdmin):
     mark_cancelled.short_description = "Отметить как отмененные"
 
 
-
 @admin.register(DoctorSchedule)
 class DoctorScheduleAdmin(admin.ModelAdmin):
-    form = DoctorScheduleAdminForm  # Оставляем, если вы используете кастомную форму для редактирования записей расписания.
-    list_display = ('doctor', 'date', 'start_time', 'end_time', 'interval_minutes')  # Добавил interval_minutes
+    form = DoctorScheduleAdminForm
+    list_display = ('doctor', 'date', 'start_time', 'end_time', 'interval_minutes')
     list_filter = ('doctor', 'date')
     search_fields = ('doctor__name',)
     date_hierarchy = 'date'
     raw_id_fields = ('doctor',)
 
-    # 1. Добавляем URL-путь для нашей страницы генерации
     def get_urls(self):
         urls = super().get_urls()
         my_urls = [
@@ -176,10 +180,9 @@ class DoctorScheduleAdmin(admin.ModelAdmin):
         ]
         return my_urls + urls
 
-    # 2. Представление для обработки страницы генерации
     def generate_schedule_view(self, request):
         if request.method == 'POST':
-            form = GenerateScheduleForm(request.POST)  # Используем нашу новую форму
+            form = GenerateScheduleForm(request.POST)
             if form.is_valid():
                 start_date = form.cleaned_data['start_date']
                 end_date = form.cleaned_data['end_date']
@@ -232,7 +235,6 @@ class DoctorScheduleAdmin(admin.ModelAdmin):
         context['title'] = "Генерация расписания"
         return render(request, 'admin/generate_schedule.html', context)
 
-    # 3. Добавляем ссылку на страницу генерации на странице списка DoctorSchedule
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
         extra_context['generate_schedule_url'] = reverse('admin:core_doctorschedule_generate_schedule')
@@ -244,24 +246,40 @@ class MedicalRecordAdmin(admin.ModelAdmin):
     list_display = ('appointment', 'title', 'uploaded_by_doctor', 'uploaded_at')
     list_filter = ('uploaded_at', 'uploaded_by_doctor', 'appointment__doctor')
     search_fields = ('appointment__user__username', 'appointment__doctor__name', 'title')
-    raw_id_fields = ('appointment', 'uploaded_by_doctor',)  # Удобно для выбора связанных объектов
+    raw_id_fields = ('appointment', 'uploaded_by_doctor',)
 
-    # Автоматически устанавливаем врача, если это администратор/врач
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        # Если пользователь - врач, автоматически заполняем поле uploaded_by_doctor
-        # (предполагая, что у Doctor есть user = OneToOneField(User))
-        if obj is None and hasattr(request.user, 'doctor_profile'):  # Если это новый объект и пользователь - врач
+        if obj is None and hasattr(request.user, 'doctor_profile'):
             form.base_fields['uploaded_by_doctor'].initial = request.user
-            form.base_fields['uploaded_by_doctor'].widget.attrs['readonly'] = True  # Сделать поле только для чтения
+            form.base_fields['uploaded_by_doctor'].widget.attrs['readonly'] = True
             form.base_fields['uploaded_by_doctor'].widget.attrs[
-                'disabled'] = True  # Отключить для редактирования через форму, но данные сохранятся
+                'disabled'] = True
         return form
 
     def save_model(self, request, obj, form, change):
-        if not obj.uploaded_by_doctor_id:  # Если uploaded_by_doctor не установлен (в случае создания через админку)
+        if not obj.uploaded_by_doctor_id:
             if hasattr(request.user, 'doctor_profile'):
                 obj.uploaded_by_doctor = request.user
         super().save_model(request, obj, form, change)
 
-# Register your models here.
+
+@admin.register(FAQItem)
+class FAQItemAdmin(admin.ModelAdmin):
+    list_display = ('question_preview', 'answer_preview', 'is_published', 'created_at')
+    list_filter = ('is_published', 'created_at')
+    search_fields = ('question', 'answer')
+    list_editable = ('is_published',)
+    fieldsets = (
+        (None, {
+            'fields': ('question', 'answer', 'is_published')
+        }),
+    )
+
+    def question_preview(self, obj):
+        return obj.question[:75] + '...' if len(obj.question) > 75 else obj.question
+    question_preview.short_description = "Вопрос"
+
+    def answer_preview(self, obj):
+        return obj.answer[:75] + '...' if obj.answer and len(obj.answer) > 75 else obj.answer
+    answer_preview.short_description = "Ответ (предпросмотр)"

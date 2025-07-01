@@ -1,7 +1,8 @@
 # med_loupemed/core/forms.py
 
 from django import forms
-from .models import Review, Doctor, DoctorSchedule, Appointment, Service, User, MedicalRecord
+from .models import Review, Doctor, DoctorSchedule, Appointment, Service, User, MedicalRecord, FAQItem
+
 
 class ReviewForm(forms.ModelForm):
 
@@ -141,3 +142,16 @@ class MedicalRecordUploadForm(forms.ModelForm):
             ).exclude(id__in=existing_appointment_ids).order_by('-date', '-time')
         else:
             self.fields['appointment'].queryset = Appointment.objects.all().order_by('-date', '-time')
+
+
+
+class UserQuestionForm(forms.ModelForm):
+    class Meta:
+        model = FAQItem
+        fields = ['question']
+        widgets = {
+            'question': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Задайте свой вопрос...'}),
+        }
+        labels = {
+            'question': 'Ваш вопрос',
+        }

@@ -1,7 +1,7 @@
 from django.db import models
-from django.utils import timezone
 from django.utils.text import slugify
 from django.contrib.auth.models import User
+
 
 class ContactRequest(models.Model):
     """
@@ -45,6 +45,7 @@ class AboutUsPage(models.Model):
     def __str__(self):
         return self.title
 
+
 class ContactInfo(models.Model):
     """
     Модель для хранения контактной информации компании.
@@ -72,14 +73,12 @@ class ContactInfo(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        # Используем название клиники, если оно есть, иначе дефолтное
         return self.name or "Контактная информация компании"
 
 
 class Doctor(models.Model):
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True,
                                 related_name='doctor_profile', verbose_name='Пользователь (аккаунт врача)')
-
 
     name = models.CharField(max_length=255, verbose_name="Полное имя")
     specialty = models.CharField(max_length=100, verbose_name="Специализация")
@@ -106,6 +105,7 @@ class Doctor(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         verbose_name = "Врач"
         verbose_name_plural = "Врачи"
@@ -240,6 +240,7 @@ class ServicePriceItem(models.Model):
     def __str__(self):
         return f"{self.service.name} - {self.item_name}"
 
+
 class Appointment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments', verbose_name='Пациент')
     doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='appointments', verbose_name='Врач')
@@ -301,7 +302,6 @@ class DoctorSchedule(models.Model):
         verbose_name = 'Расписание врача'
         verbose_name_plural = 'Расписание врачей'
 
-
     def __str__(self):
         return f"Расписание {self.doctor.name} на {self.date}: {self.start_time}-{self.end_time}"
 
@@ -340,3 +340,19 @@ class MedicalRecord(models.Model):
 
     def __str__(self):
         return f"Результат для {self.appointment.user.username} ({self.appointment.service.name} от {self.appointment.date})"
+
+
+class FAQItem(models.Model):
+    question = models.CharField(max_length=255, verbose_name="Вопрос")
+    answer = models.TextField(verbose_name="Ответ", blank=True, null=True)
+    is_published = models.BooleanField(default=False, verbose_name="Опубликовать на сайте")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Вопрос и Ответ (FAQ)"
+        verbose_name_plural = "Вопросы и Ответы (FAQ)"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.question[:50] + "..." if len(self.question) > 50 else self.question

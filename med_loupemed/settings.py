@@ -49,8 +49,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'accounts',
-    'services',
-    'appointments',
 ]
 
 MIDDLEWARE = [
@@ -88,8 +86,7 @@ WSGI_APPLICATION = 'med_loupemed.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Настройки для подключения к базе данных PostgreSQL,
-# используя переменные окружения из .env файла.
+# Database settings (PostgreSQL)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -100,8 +97,16 @@ DATABASES = {
         'PORT': os.getenv('POSTGRES_PORT'),
     }
 }
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
-
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+CONTACT_FORM_RECIPIENT_EMAIL = os.getenv('CONTACT_FORM_RECIPIENT_EMAIL')
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -124,9 +129,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'ru-ru' # Устанавливаем русский язык для админки и сообщений
+LANGUAGE_CODE = 'ru-ru'
 
-TIME_ZONE = 'Europe/Moscow' # Устанавливаем часовой пояс
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
@@ -138,14 +143,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'), # <-- Указываем Django, где искать статические файлы
+    os.path.join(BASE_DIR, 'static'),
 ]
-# Директория, куда Django будет собирать все статические файлы для продакшена.
-STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
 
-# URL для доступа к пользовательским медиафайлам.
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
 MEDIA_URL = 'media/'
-# Директория, где будут храниться пользовательские медиафайлы.
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type

@@ -1,5 +1,6 @@
 from .models import ContactInfo
 
+
 def contact_info(request):
     """
     Добавляет объект ContactInfo в контекст шаблона.
