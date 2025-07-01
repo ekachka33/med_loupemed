@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.utils import timezone
 from datetime import datetime, timedelta, time
+from .forms import MedicalRecordUploadForm
 
 def home(request):
     """
@@ -355,7 +356,6 @@ def get_services_for_doctor(request):
             pass
     return JsonResponse(services_data, safe=False)
 
-# Ваша существующая GetAvailableTimeSlotsView
 class GetAvailableTimeSlotsView(View):
     def get(self, request, *args, **kwargs):
         doctor_id = request.GET.get('doctor_id')
@@ -440,3 +440,78 @@ class GetAvailableTimeSlotsView(View):
                 current_slot_dt += timedelta(minutes=interval)
 
         return JsonResponse({'available_slots': available_slots})
+
+
+class UserAppointmentsView(LoginRequiredMixin, View):
+    """
+    Представление для отображения предстоящих и прошедших записей авторизованного пользователя.
+    """
+    template_name = 'core/my_appointments.html'
+    login_url = '/accounts/login/'
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        current_datetime = timezone.now()
+
+        # Получаем все записи пользователя
+        all_appointments = Appointment.objects.filter(user=user).order_by('date', 'time')
+
+        # Фильтруем предстоящие записи (дата в будущем ИЛИ дата сегодня и время в будущем)
+        upcoming_appointments = []
+        past_appointments = []
+
+        for appt in all_appointments:
+
+            naive_appointment_datetime = datetime.combine(appt.date, appt.time)
+
+            appointment_datetime = timezone.make_aware(naive_appointment_datetime)
+
+            if appointment_datetime >= current_datetime:
+                upcoming_appointments.append(appt)
+            else:
+                past_appointments.append(appt)
+
+        context = {
+            'upcoming_appointments': upcoming_appointments,
+            'past_appointments': past_appointments,
+            'title': 'Мои записи',
+        }
+        return render(request, self.template_name, context)
+
+
+def is_doctor(user):
+    return hasattr(user, 'doctor_profile') and user.doctor_profile.is_active
+
+@login_required
+@user_passes_test(is_doctor)
+def doctor_panel(request):
+    doctor = request.user.doctor_profile
+
+    # Получаем все записи на прием для текущего врача
+    all_appointments = Appointment.objects.filter(doctor=doctor).order_by('-date', '-time')
+
+
+    if request.method == 'POST':
+        form = MedicalRecordUploadForm(request.POST, request.FILES, doctor=doctor)
+        if form.is_valid():
+            medical_record = form.save(commit=False)
+            medical_record.uploaded_by_doctor = request.user
+
+            medical_record.save()
+            messages.success(request, 'Результат анализов успешно добавлен!')
+            return redirect('core:doctor_panel')
+        else:
+            messages.error(request, 'Ошибка при добавлении результата анализов. Проверьте введенные данные.')
+    else:
+        form = MedicalRecordUploadForm(doctor=doctor)
+
+
+    appointments_with_records = all_appointments.select_related('medical_record')
+
+    context = {
+        'title': 'Панель врача',
+        'doctor': doctor,
+        'all_appointments': appointments_with_records,
+        'form': form,
+    }
+    return render(request, 'core/doctor_panel.html', context)

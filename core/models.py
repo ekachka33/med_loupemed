@@ -304,3 +304,39 @@ class DoctorSchedule(models.Model):
 
     def __str__(self):
         return f"Расписание {self.doctor.name} на {self.date}: {self.start_time}-{self.end_time}"
+
+
+class MedicalRecord(models.Model):
+    """
+    Модель для хранения медицинских записей/результатов, привязанных к конкретному приему.
+    """
+    appointment = models.OneToOneField(
+        Appointment,
+        on_delete=models.CASCADE,
+        related_name='medical_record', # Один к одному с записью на прием
+        verbose_name='Запись на прием',
+        help_text='Медицинская запись привязана к конкретному приему.'
+    )
+    title = models.CharField(max_length=255, verbose_name="Название документа/анализа", blank=True, null=True)
+    file = models.FileField(
+        upload_to='medical_records/',
+        verbose_name="Файл (анализ, заключение)",
+        help_text="Загрузите файл с результатами анализов или медицинским заключением (PDF, JPG, DOCX и т.д.)."
+    )
+    uploaded_by_doctor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='uploaded_medical_records',
+        verbose_name='Загружено врачом'
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата загрузки")
+    notes = models.TextField(blank=True, null=True, verbose_name="Дополнительные примечания")
+
+    class Meta:
+        verbose_name = "Медицинская запись/Результат"
+        verbose_name_plural = "Медицинские записи/Результаты"
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"Результат для {self.appointment.user.username} ({self.appointment.service.name} от {self.appointment.date})"

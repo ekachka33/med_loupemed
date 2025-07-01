@@ -95,7 +95,7 @@
             {% endif %}
 
             <div class="text-center mt-5">
-                <button type="button" class="btn btn-lg btn-success" data-bs-toggle="modal" data-bs-target="">Записаться на прием</button>
+                <a href="{% if user.is_authenticated %}{% url 'core:make_appointment' %}{% else %}{% url 'accounts:register' %}{% endif %}" class="btn btn-lg btn-success">Записаться на прием</a>
             </div>
 
         </div>

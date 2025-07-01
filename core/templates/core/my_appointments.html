@@ -1,0 +1,111 @@
+{# core/templates/core/my_appointments.html #}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Медицинская клиника LOUPMED{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center mb-4">{{ title }}</h1>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <h3 class="mb-3">Предстоящие записи</h3>
+            {% if upcoming_appointments %}
+                <ul class="list-group">
+                    {% for appointment in upcoming_appointments %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-1">
+                                    {{ appointment.service.name }}
+                                    {% if appointment.status == 'pending' %}
+                                        <span class="badge bg-warning text-dark ms-2">На рассмотрении</span>
+                                    {% elif appointment.status == 'confirmed' %}
+                                        <span class="badge bg-success ms-2">Подтверждено</span>
+                                    {% elif appointment.status == 'cancelled' %}
+                                        <span class="badge bg-danger ms-2">Отменено</span>
+                                    {% endif %}
+                                </h5>
+                                <p class="mb-1">
+                                    Врач: **{{ appointment.doctor.name }}** ({{ appointment.doctor.specialty }})<br>
+                                    Дата: **{{ appointment.date|date:"d M Y" }}**<br>
+                                    Время: **{{ appointment.time|time:"H:i" }}**
+                                </p>
+                                {% if appointment.comment %}
+                                    <small class="text-muted">Комментарий: {{ appointment.comment }}</small>
+                                {% endif %}
+                                {# Добавляем блок для результатов анализов в предстоящие записи #}
+                                {% if appointment.medical_record %} {# Проверяем, есть ли связанная медицинская запись #}
+                                    <div class="mt-2">
+                                        <strong>Результаты анализов:</strong><br>
+                                        <a href="{{ appointment.medical_record.file.url }}" target="_blank" class="btn btn-sm btn-info">
+                                            <i class="fas fa-download"></i> {% if appointment.medical_record.title %}{{ appointment.medical_record.title }}{% else %}Скачать файл{% endif %}
+                                        </a>
+                                        {% if appointment.medical_record.notes %}
+                                            <p class="mb-0"><small class="text-muted">Примечание врача: {{ appointment.medical_record.notes }}</small></p>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {# Кнопки действий, например, отменить запись (опционально) #}
+                            {# <button class="btn btn-sm btn-danger">Отменить</button> #}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                    У вас пока нет предстоящих записей.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-6">
+            <h3 class="mb-3">Прошлые записи</h3>
+            {% if past_appointments %}
+                <ul class="list-group">
+                    {% for appointment in past_appointments %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-1">
+                                    {{ appointment.service.name }}
+                                    {% if appointment.status == 'completed' %}
+                                        <span class="badge bg-primary ms-2">Завершено</span>
+                                    {% elif appointment.status == 'cancelled' %}
+                                        <span class="badge bg-danger ms-2">Отменено</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary ms-2">Статус: {{ appointment.status }}</span> {# Если есть другие статусы #}
+                                    {% endif %}
+                                </h5>
+                                <p class="mb-1">
+                                    Врач: **{{ appointment.doctor.name }}** ({{ appointment.doctor.specialty }})<br>
+                                    Дата: **{{ appointment.date|date:"d M Y" }}**<br>
+                                    Время: **{{ appointment.time|time:"H:i" }}**
+                                </p>
+                                {% if appointment.comment %}
+                                    <small class="text-muted">Комментарий: {{ appointment.comment }}</small>
+                                {% endif %}
+                                {# Добавляем блок для результатов анализов в прошлые записи #}
+                                {% if appointment.medical_record %} {# Проверяем, есть ли связанная медицинская запись #}
+                                    <div class="mt-2">
+                                        <strong>Результаты анализов:</strong><br>
+                                        <a href="{{ appointment.medical_record.file.url }}" target="_blank" class="btn btn-sm btn-info">
+                                            <i class="fas fa-download"></i> {% if appointment.medical_record.title %}{{ appointment.medical_record.title }}{% else %}Скачать файл{% endif %}
+                                        </a>
+                                        {% if appointment.medical_record.notes %}
+                                            <p class="mb-0"><small class="text-muted">Примечание врача: {{ appointment.medical_record.notes }}</small></p>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                    У вас пока нет прошлых записей.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

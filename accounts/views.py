@@ -33,3 +33,4 @@ def logout_view(request):
     auth_logout(request)
     return redirect('core:home')
 
+

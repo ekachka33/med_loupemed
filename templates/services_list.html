@@ -59,8 +59,7 @@
                                 <p class="card-text text-muted">Цена по запросу</p>
                             {% endif %}
                             <a href="{% url 'core:service_detail' slug=service.slug %}" class="btn btn-primary mt-2">Подробнее</a>
-                            {# Кнопка записи на прием, возможно, модальное окно #}
-                            <button type="button" class="btn btn-outline-success mt-2 ms-2" data-bs-toggle="modal" data-bs-target="#callbackModal">Записаться</button>
+                            <a href="{% if user.is_authenticated %}{% url 'core:make_appointment' %}{% else %}{% url 'accounts:register' %}{% endif %}" class="btn btn-success mt-2">Записаться на прием</a>
                         </div>
                     </div>
                 </div>

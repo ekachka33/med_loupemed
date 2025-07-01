@@ -25,7 +25,7 @@
                 <div class="carousel-caption d-none d-md-block">
                     <h5>Опытные специалисты</h5>
                     <p>Команда высококвалифицированных врачей готова помочь.</p>
-                    <a href="#" class="btn btn-primary">Записаться на прием</a>
+                    <a href="{% if user.is_authenticated %}{% url 'core:make_appointment' %}{% else %}{% url 'accounts:register' %}{% endif %}" class="btn btn-primary">Записаться на прием</a>
                 </div>
             </div>
             <div class="carousel-item">

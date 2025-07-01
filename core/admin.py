@@ -7,7 +7,7 @@ from django import forms
 from .models import (
     ContactRequest, AboutUsPage, ContactInfo, Doctor, Review,
     ServiceCategory, Service, ServicePriceItem,
-    Appointment, DoctorSchedule,
+    Appointment, DoctorSchedule, MedicalRecord
 )
 
 from .forms import AppointmentAdminForm, DoctorScheduleAdminForm
@@ -237,5 +237,31 @@ class DoctorScheduleAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context['generate_schedule_url'] = reverse('admin:core_doctorschedule_generate_schedule')
         return super().changelist_view(request, extra_context=extra_context)
+
+
+@admin.register(MedicalRecord)
+class MedicalRecordAdmin(admin.ModelAdmin):
+    list_display = ('appointment', 'title', 'uploaded_by_doctor', 'uploaded_at')
+    list_filter = ('uploaded_at', 'uploaded_by_doctor', 'appointment__doctor')
+    search_fields = ('appointment__user__username', 'appointment__doctor__name', 'title')
+    raw_id_fields = ('appointment', 'uploaded_by_doctor',)  # Удобно для выбора связанных объектов
+
+    # Автоматически устанавливаем врача, если это администратор/врач
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        # Если пользователь - врач, автоматически заполняем поле uploaded_by_doctor
+        # (предполагая, что у Doctor есть user = OneToOneField(User))
+        if obj is None and hasattr(request.user, 'doctor_profile'):  # Если это новый объект и пользователь - врач
+            form.base_fields['uploaded_by_doctor'].initial = request.user
+            form.base_fields['uploaded_by_doctor'].widget.attrs['readonly'] = True  # Сделать поле только для чтения
+            form.base_fields['uploaded_by_doctor'].widget.attrs[
+                'disabled'] = True  # Отключить для редактирования через форму, но данные сохранятся
+        return form
+
+    def save_model(self, request, obj, form, change):
+        if not obj.uploaded_by_doctor_id:  # Если uploaded_by_doctor не установлен (в случае создания через админку)
+            if hasattr(request.user, 'doctor_profile'):
+                obj.uploaded_by_doctor = request.user
+        super().save_model(request, obj, form, change)
 
 # Register your models here.

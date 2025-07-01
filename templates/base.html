@@ -50,7 +50,9 @@
                     </li>
                     {% endif %}
                     <li class="nav-item">
+                        {% if request.resolver_match.url_name != 'contact' and request.resolver_match.url_name != 'profile' %}
                         <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#callbackModal">Обратный звонок</button>
+                        {% endif %}
                     </li>
                 </ul>
             </div>

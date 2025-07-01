@@ -1,7 +1,7 @@
 # med_loupemed/core/forms.py
 
 from django import forms
-from .models import Review, Doctor, DoctorSchedule, Appointment, Service, User
+from .models import Review, Doctor, DoctorSchedule, Appointment, Service, User, MedicalRecord
 
 class ReviewForm(forms.ModelForm):
 
@@ -109,3 +109,35 @@ class UserAppointmentForm(forms.ModelForm):
         if not cleaned_data.get('time') and self.is_bound:
             self.add_error('time', 'Пожалуйста, выберите доступное время приема.')
         return cleaned_data
+
+class MedicalRecordUploadForm(forms.ModelForm):
+    appointment = forms.ModelChoiceField(
+        queryset=Appointment.objects.none(),
+        label="Запись на прием",
+        help_text="Выберите запись, к которой прикрепить результат."
+    )
+
+    class Meta:
+        model = MedicalRecord
+        fields = ['appointment', 'title', 'file', 'notes']
+        widgets = {
+            'title': forms.TextInput(attrs={'placeholder': 'Название документа или анализа'}),
+            'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Дополнительные примечания к файлу (например, интерпретация результатов)'}),
+        }
+        labels = {
+            'title': 'Название документа/анализа',
+            'file': 'Файл (PDF, JPG, PNG и т.д.)',
+            'notes': 'Примечания',
+        }
+
+    def __init__(self, *args, **kwargs):
+        doctor = kwargs.pop('doctor', None)
+        super().__init__(*args, **kwargs)
+        if doctor:
+            existing_appointment_ids = MedicalRecord.objects.values_list('appointment_id', flat=True)
+            self.fields['appointment'].queryset = Appointment.objects.filter(
+                doctor=doctor,
+                status__in=['completed', 'confirmed']
+            ).exclude(id__in=existing_appointment_ids).order_by('-date', '-time')
+        else:
+            self.fields['appointment'].queryset = Appointment.objects.all().order_by('-date', '-time')
