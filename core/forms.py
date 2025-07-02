@@ -1,7 +1,7 @@
 # med_loupemed/core/forms.py
 
 from django import forms
-from .models import Review, Doctor, DoctorSchedule, Appointment, Service, User, MedicalRecord, FAQItem
+from .models import Review, Doctor, DoctorSchedule, Appointment, Service, MedicalRecord, FAQItem
 
 
 class ReviewForm(forms.ModelForm):
@@ -39,7 +39,6 @@ class ContactForm(forms.Form):
     phone_number = forms.CharField(max_length=20, required=False, label="Ваш телефон", help_text="Мы свяжемся с вами по телефону или email.") # Новое поле
     message = forms.CharField(widget=forms.Textarea, label="Ваше сообщение")
 
-    # Добавим кастомную валидацию, чтобы требовать хотя бы email или телефон
     def clean(self):
         cleaned_data = super().clean()
         email = cleaned_data.get('email')
@@ -60,6 +59,7 @@ class AppointmentAdminForm(forms.ModelForm):
             'time': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
             'date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
         }
+
 
 class DoctorScheduleAdminForm(forms.ModelForm):
     class Meta:
@@ -111,6 +111,7 @@ class UserAppointmentForm(forms.ModelForm):
             self.add_error('time', 'Пожалуйста, выберите доступное время приема.')
         return cleaned_data
 
+
 class MedicalRecordUploadForm(forms.ModelForm):
     appointment = forms.ModelChoiceField(
         queryset=Appointment.objects.none(),
@@ -142,7 +143,6 @@ class MedicalRecordUploadForm(forms.ModelForm):
             ).exclude(id__in=existing_appointment_ids).order_by('-date', '-time')
         else:
             self.fields['appointment'].queryset = Appointment.objects.all().order_by('-date', '-time')
-
 
 
 class UserQuestionForm(forms.ModelForm):

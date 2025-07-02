@@ -1,20 +1,21 @@
-# core/views.py
+import datetime
 
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.views import View
-from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import AboutUsPage, ContactInfo, Doctor, Review, ServiceCategory, Service, Appointment, \
-    DoctorSchedule, FAQItem, ContactRequest
-from .forms import ReviewForm, ContactForm, UserAppointmentForm, UserQuestionForm
 from django.conf import settings
-from django.core.mail import send_mail
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.mail import send_mail
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from datetime import datetime, timedelta, time
-from .forms import MedicalRecordUploadForm
+from django.views import View
+from django.views.decorators.http import require_POST
+
+from .forms import ContactForm, MedicalRecordUploadForm, ReviewForm, \
+    UserAppointmentForm, UserQuestionForm
+from .models import (AboutUsPage, Appointment, ContactInfo, ContactRequest,
+                     Doctor, DoctorSchedule, FAQItem, Review, Service,
+                     ServiceCategory)
 
 
 def home(request):
@@ -27,9 +28,7 @@ def home(request):
     context = {
         'about_us_page': about_us_page,
         'contact_form': contact_form,
-
     }
-
     return render(request, 'core/home.html', context)
 
 
@@ -75,7 +74,9 @@ def submit_review(request):
             review = form.save(commit=False)
             review.is_approved = False
             review.save()
-            return JsonResponse({'success': True, 'message': 'Спасибо за ваш отзыв! Он будет опубликован после модерации.'})
+            return JsonResponse(
+                {'success': True, 'message': 'Спасибо за ваш отзыв! Он будет опубликован после модерации.'}
+            )
         else:
             # Если форма невалидна, возвращаем ошибки
             return JsonResponse({'success': False, 'errors': form.errors}, status=400)
@@ -84,10 +85,7 @@ def submit_review(request):
 
 def service_list(request):
     categories = ServiceCategory.objects.all()
-    # Получаем все активные услуги
     services = Service.objects.filter(is_active=True).order_by('name')
-
-    # Логика для фильтрации по категории, если нужен
     category_slug = request.GET.get('category')
     if category_slug:
         services = services.filter(category__slug=category_slug)
@@ -106,7 +104,6 @@ def service_list(request):
 
 def service_detail(request, slug):
     service = get_object_or_404(Service, slug=slug, is_active=True)
-    # Получаем пункты прайс-листа, связанные с этой услугой
     price_items = service.price_items.all().order_by('order')
     contact_form = ContactForm()
 
@@ -127,7 +124,6 @@ def contact_page(request):
         'form': form,
     }
     return render(request, 'contact.html', context)
-
 
 
 @require_POST
@@ -153,7 +149,13 @@ def submit_feedback(request):
             )
         except Exception as e:
             print(f"Ошибка сохранения запроса обратной связи в БД: {e}")
-            return JsonResponse({'success': False, 'message': 'Произошла ошибка при сохранении вашего запроса. Пожалуйста, попробуйте позже.'}, status=500)
+            return JsonResponse(
+                {'success': False, 'message': (
+                    'Произошла ошибка при сохранении вашего запроса. '
+                    'Пожалуйста, попробуйте позже.'
+                )},
+                status=500
+            )
 
         admin_subject = f"Новое сообщение с сайта от {name} (Тип: {request_type})"
         admin_body = (
@@ -172,8 +174,12 @@ def submit_feedback(request):
             )
         except Exception as e:
             print(f"Ошибка отправки email администратору: {e}")
-
-            return JsonResponse({'success': True, 'message': 'Ваш запрос успешно отправлен! (Произошла ошибка при отправке уведомления на почту администратора)'})
+            return JsonResponse(
+                {'success': True, 'message': (
+                    'Ваш запрос успешно отправлен! '
+                    '(Произошла ошибка при отправке уведомления на почту администратора)'
+                )}
+            )
 
         if user_email:
             user_subject = "Ваше сообщение успешно получено!"
@@ -197,9 +203,13 @@ def submit_feedback(request):
                 print(f"Ошибка отправки email пользователю: {e}")
                 pass
 
-        return JsonResponse({'success': True, 'message': 'Ваше сообщение успешно отправлено! Мы свяжемся с вами в ближайшее время.'})
+        return JsonResponse(
+            {'success': True, 'message': (
+                'Ваше сообщение успешно отправлено! '
+                'Мы свяжемся с вами в ближайшее время.'
+            )}
+        )
     else:
-
         errors = form.errors.as_json()
         return JsonResponse({'success': False, 'errors': errors}, status=400)
 
@@ -222,10 +232,6 @@ def profile_view(request):
         'doctor_profile': doctor_profile,
         'title': 'Личный кабинет',
     }
-
-    if is_doctor:
-
-        pass
 
     return render(request, 'core/profile.html', context)
 
@@ -258,25 +264,26 @@ class GetAvailableTimeSlotsView(View):
         date_str = request.GET.get('date')
         service_id = request.GET.get('service_id')
 
-        # Проверка базовых параметров
         if not doctor_id or not date_str or not service_id:
-            return JsonResponse({'error': 'Missing parameters'}, status=400)
+            return JsonResponse(
+                {'error': 'Missing parameters (doctor_id, date, service_id needed)'},
+                status=400
+            )
 
         try:
-            doctor = Doctor.objects.get(id=doctor_id)
-            selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            service = Service.objects.get(id=service_id)
+            doctor = get_object_or_404(Doctor, id=doctor_id)
+            selected_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            service = get_object_or_404(Service, id=service_id)
             service_duration = service.duration_minutes
             if service_duration is None:
-                 service_duration = 30
-        except (Doctor.DoesNotExist, Service.DoesNotExist, ValueError):
-            return JsonResponse({'error': 'Invalid doctor, service, or date format'}, status=400)
+                service_duration = 30
+        except Exception as e:
+            return JsonResponse({'error': f'Invalid input: {e}'}, status=400)
 
-        # Проверяем, что выбранная дата не в прошлом
-        if selected_date < timezone.now().date():
+        current_datetime = timezone.now()
+        if selected_date < current_datetime.date():
             return JsonResponse({'error': 'Cannot book an appointment in the past'}, status=400)
 
-        # Получаем расписание врача на выбранную дату
         schedule = DoctorSchedule.objects.filter(
             doctor=doctor,
             date=selected_date
@@ -289,31 +296,36 @@ class GetAvailableTimeSlotsView(View):
             end_time_obj = schedule.end_time
             interval = schedule.interval_minutes
 
-            # Защита от некорректных данных в расписании
-            if not (isinstance(start_time_obj, time) and isinstance(end_time_obj, time) and
-                    start_time_obj < end_time_obj and interval > 0):
-                return JsonResponse({'error': 'Invalid schedule data for doctor on this date'}, status=400)
+            if not (isinstance(start_time_obj, datetime.time) and
+                    isinstance(end_time_obj, datetime.time) and
+                    start_time_obj < end_time_obj and interval >= 5):
+                return JsonResponse(
+                    {'error': 'Invalid schedule configuration for doctor on this date'},
+                    status=400
+                )
 
-            # Получаем все занятые записи на этот день для этого врача
             booked_appointments = Appointment.objects.filter(
                 doctor=doctor,
                 date=selected_date,
                 status__in=['pending', 'confirmed']
             ).select_related('service')
 
-            # Преобразуем занятые записи в интервалы datetime
             booked_intervals = []
             for appt in booked_appointments:
-                appt_service_duration = appt.service.duration_minutes if appt.service and appt.service.duration_minutes is not None else 30 # Дефолт
-                start_dt = datetime.combine(selected_date, appt.time)
-                end_dt = start_dt + timedelta(minutes=appt_service_duration)
+                appt_service_duration = (
+                    appt.service.duration_minutes
+                    if appt.service and appt.service.duration_minutes is not None
+                    else 30
+                )
+                start_dt = datetime.datetime.combine(selected_date, appt.time)
+                end_dt = start_dt + datetime.timedelta(minutes=appt_service_duration)
                 booked_intervals.append((start_dt, end_dt))
 
-            current_slot_dt = datetime.combine(selected_date, start_time_obj)
-            end_dt = datetime.combine(selected_date, end_time_obj)
+            current_slot_dt = datetime.datetime.combine(selected_date, start_time_obj)
+            end_schedule_dt = datetime.datetime.combine(selected_date, end_time_obj)
 
-            while current_slot_dt + timedelta(minutes=service_duration) <= end_dt:
-                slot_end_dt = current_slot_dt + timedelta(minutes=service_duration)
+            while current_slot_dt + datetime.timedelta(minutes=service_duration) <= end_schedule_dt:
+                slot_end_dt = current_slot_dt + datetime.timedelta(minutes=service_duration)
                 is_booked = False
 
                 for booked_start, booked_end in booked_intervals:
@@ -321,13 +333,13 @@ class GetAvailableTimeSlotsView(View):
                         is_booked = True
                         break
 
-                if selected_date == timezone.now().date() and current_slot_dt < timezone.now():
+                if selected_date == current_datetime.date() and current_slot_dt < current_datetime:
                     is_booked = True
 
                 if not is_booked:
                     available_slots.append(current_slot_dt.strftime('%H:%M'))
 
-                current_slot_dt += timedelta(minutes=interval)
+                current_slot_dt += datetime.timedelta(minutes=interval)
 
         return JsonResponse({'available_slots': available_slots})
 
@@ -339,7 +351,10 @@ class DoctorScheduleView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         # Проверяем, что пользователь является доктором
         if not hasattr(request.user, 'doctor_profile'):
-            messages.error(request, 'У вас нет доступа к расписанию врачей. Вы не привязаны к профилю доктора.')
+            messages.error(
+                request,
+                'У вас нет доступа к расписанию врачей. Вы не привязаны к профилю доктора.'
+            )
             return redirect('core:profile')
 
         doctor = request.user.doctor_profile
@@ -364,99 +379,16 @@ def get_services_for_doctor(request):
     services_data = []
     if doctor_id:
         try:
-            doctor = Doctor.objects.get(id=doctor_id)
+            doctor = get_object_or_404(Doctor, id=doctor_id)
 
             for service in doctor.services.filter(is_active=True).order_by('name'):
                 services_data.append({
                     'id': service.id,
                     'name': service.name
                 })
-        except Doctor.DoesNotExist:
+        except Exception:
             pass
     return JsonResponse(services_data, safe=False)
-
-
-class GetAvailableTimeSlotsView(View):
-    def get(self, request, *args, **kwargs):
-        doctor_id = request.GET.get('doctor_id')
-        date_str = request.GET.get('date')
-        service_id = request.GET.get('service_id')
-
-        # Проверка базовых параметров
-        if not doctor_id or not date_str or not service_id:
-            return JsonResponse({'error': 'Missing parameters (doctor_id, date, service_id needed)'}, status=400)
-
-        try:
-            doctor = Doctor.objects.get(id=doctor_id)
-            selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            service = Service.objects.get(id=service_id)
-            service_duration = service.duration_minutes
-            if service_duration is None:
-                 service_duration = 30
-        except (Doctor.DoesNotExist, Service.DoesNotExist, ValueError) as e:
-            return JsonResponse({'error': f'Invalid input: {e}'}, status=400)
-
-        # Проверяем, что выбранная дата не в прошлом (включая текущий день, если время уже прошло)
-        current_datetime = timezone.now()
-        if selected_date < current_datetime.date():
-            return JsonResponse({'error': 'Cannot book an appointment in the past'}, status=400)
-
-        # Получаем расписание врача на выбранную дату
-        schedule = DoctorSchedule.objects.filter(
-            doctor=doctor,
-            date=selected_date
-        ).first()
-
-        available_slots = []
-
-        if schedule:
-            start_time_obj = schedule.start_time
-            end_time_obj = schedule.end_time
-            interval = schedule.interval_minutes
-
-            if not (isinstance(start_time_obj, time) and isinstance(end_time_obj, time) and
-                    start_time_obj < end_time_obj and interval >= 5):
-                return JsonResponse({'error': 'Invalid schedule configuration for doctor on this date'}, status=400)
-
-            # Получаем все занятые записи на этот день для этого врача
-            booked_appointments = Appointment.objects.filter(
-                doctor=doctor,
-                date=selected_date,
-                status__in=['pending', 'confirmed']
-            ).select_related('service')
-
-            booked_intervals = []
-            for appt in booked_appointments:
-
-                appt_service_duration = appt.service.duration_minutes if appt.service and appt.service.duration_minutes is not None else 30
-                start_dt = datetime.combine(selected_date, appt.time)
-                end_dt = start_dt + timedelta(minutes=appt_service_duration)
-                booked_intervals.append((start_dt, end_dt))
-
-
-            current_slot_dt = datetime.combine(selected_date, start_time_obj)
-            end_schedule_dt = datetime.combine(selected_date, end_time_obj)
-
-            while current_slot_dt + timedelta(minutes=service_duration) <= end_schedule_dt:
-                slot_end_dt = current_slot_dt + timedelta(minutes=service_duration)
-                is_booked = False
-
-                # Проверка на пересечение с уже занятыми интервалами
-                for booked_start, booked_end in booked_intervals:
-                    if (current_slot_dt < booked_end and slot_end_dt > booked_start):
-                        is_booked = True
-                        break
-
-                # Проверка на прошлое время для текущего дня
-                if selected_date == current_datetime.date() and current_slot_dt < current_datetime:
-                    is_booked = True
-
-                if not is_booked:
-                    available_slots.append(current_slot_dt.strftime('%H:%M'))
-
-                current_slot_dt += timedelta(minutes=interval)
-
-        return JsonResponse({'available_slots': available_slots})
 
 
 class UserAppointmentsView(LoginRequiredMixin, View):
@@ -476,9 +408,7 @@ class UserAppointmentsView(LoginRequiredMixin, View):
         past_appointments = []
 
         for appt in all_appointments:
-
-            naive_appointment_datetime = datetime.combine(appt.date, appt.time)
-
+            naive_appointment_datetime = datetime.datetime.combine(appt.date, appt.time)
             appointment_datetime = timezone.make_aware(naive_appointment_datetime)
 
             if appointment_datetime >= current_datetime:
@@ -514,7 +444,10 @@ def doctor_panel(request):
             messages.success(request, 'Результат анализов успешно добавлен!')
             return redirect('core:doctor_panel')
         else:
-            messages.error(request, 'Ошибка при добавлении результата анализов. Проверьте введенные данные.')
+            messages.error(
+                request,
+                'Ошибка при добавлении результата анализов. Проверьте введенные данные.'
+            )
     else:
         form = MedicalRecordUploadForm(doctor=doctor)
 
@@ -540,13 +473,19 @@ def faq_page(request):
     }
     return render(request, 'core/faq.html', context)
 
+
 @require_POST
 def submit_question(request):
     form = UserQuestionForm(request.POST)
     if form.is_valid():
         faq_item = form.save(commit=False)
         faq_item.save()
-        return JsonResponse({'success': True, 'message': 'Ваш вопрос успешно отправлен! Мы ответим на него в ближайшее время.'})
+        return JsonResponse(
+            {'success': True, 'message': (
+                'Ваш вопрос успешно отправлен! '
+                'Мы ответим на него в ближайшее время.'
+            )}
+        )
     else:
         errors = form.errors.as_json()
         return JsonResponse({'success': False, 'errors': errors}, status=400)
