@@ -1,0 +1,53 @@
+{% extends 'admin/base.html' %} {# Расширяем базовый шаблон админки #}
+{% load i18n admin_urls static %} {# static нужен, если используете статические файлы #}
+
+{% block content %}
+<div id="content-main">
+    <div class="module">
+        <h1>{% blocktrans %}Генерация расписания врачей{% endblocktrans %}</h1>
+        <p>Используйте эту форму для автоматической генерации записей расписания для врачей.</p>
+        <p>Будет сгенерировано расписание для тех врачей, у которых заполнены поля "Стандартное время начала работы" и "Стандартное время окончания работы" в их профиле.</p>
+
+        <form action="" method="post" id="generate-schedule-form">{% csrf_token %}
+            <fieldset class="module aligned">
+                <div class="form-row">
+                    {{ form.start_date.errors }}
+                    <div class="fieldWrapper">
+                        {{ form.start_date.label_tag }}
+                        {{ form.start_date }}
+                        {% if form.start_date.help_text %}<p class="help">{{ form.start_date.help_text }}</p>{% endif %}
+                    </div>
+                </div>
+                <div class="form-row">
+                    {{ form.end_date.errors }}
+                    <div class="fieldWrapper">
+                        {{ form.end_date.label_tag }}
+                        {{ form.end_date }}
+                        {% if form.end_date.help_text %}<p class="help">{{ form.end_date.help_text }}</p>{% endif %}
+                    </div>
+                </div>
+                <div class="form-row">
+                    {{ form.doctors.errors }}
+                    <div class="fieldWrapper">
+                        {{ form.doctors.label_tag }}
+                        {{ form.doctors }}
+                        {% if form.doctors.help_text %}<p class="help">{{ form.doctors.help_text }}</p>{% endif %}
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="submit-row">
+                <input type="submit" value="Сгенерировать расписание" class="default" name="_generate">
+                <a href="{% url 'admin:core_doctorschedule_changelist' %}" class="button cancel-link">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+{# Если у вас есть Flatpickr или jQuery UI Datepicker, убедитесь, что они инициализированы для vDateField #}
+{# Пример для Flatpickr, если он уже настроен в админке или вы его подключили #}
+{# <script>document.addEventListener('DOMContentLoaded', function() { flatpickr(".vDateField"); });</script> #}
+{% endblock %}

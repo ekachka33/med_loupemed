@@ -1,0 +1,229 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Медицинская клиника{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'core:home' %}">
+                <img src="{% static 'img/logo.png' %}" alt="Логотип Клиники" height="60">
+                Название Клиники
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="{% url 'core:home' %}">Главная</a>
+                    </li>
+                    <li class="nav-item">
+                         <a class="nav-link" href="{% url 'core:about' %}">О клинике</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'core:service_list' %}">Услуги</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'core:contact' %}">Контакты</a>
+                    </li>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'core:profile' %}">Личный кабинет</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:logout' %}">Выйти</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:login' %}">Войти</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:register' %}">Регистрация</a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        {% if request.resolver_match.url_name != 'contact' and request.resolver_match.url_name != 'profile' %}
+                        <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#callbackModal">Обратный звонок</button>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="bg-light text-center text-lg-start mt-5">
+    <div class="container p-4">
+        <div class="row">
+            <div class="col-lg-6 col-md-12 mb-4 mb-md-0">
+                <h5 class="text-uppercase">
+                    {% if contact_info %}{{ contact_info.name }}{% else %}Название Клиники{% endif %}
+                </h5>
+                <p>
+                    {% if contact_info %}{{ contact_info.short_description }}{% else %}Краткое описание клиники или миссия.{% endif %}
+                </p>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+                <h5 class="text-uppercase">Ссылки</h5>
+                <ul class="list-unstyled mb-0">
+                    <li><a href="{% url 'core:about' %}" class="text-dark">О клинике</a></li>
+                    <li><a href="{% url 'core:service_list' %}" class="text-dark">Услуги</a></li>
+                    <li><a href="{% url 'core:about' %}" class="text-dark">Врачи</a></li>
+                    <li><a href="{% url 'core:contact' %}" class="text-dark">Контакты</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+                <h5 class="text-uppercase">Контакты</h5>
+                <ul class="list-unstyled mb-0">
+                    <li>Адрес: {% if contact_info %}{{ contact_info.address }}{% else %}Улица, Дом, Город{% endif %}</li>
+                    <li>Телефон: {% if contact_info %}{{ contact_info.phone_number_main }}{% else %}+7 (XXX) XXX-XX-XX{% endif %}</li>
+                    {% if contact_info.phone_number_alt %}<li>Доп. телефон: {{ contact_info.phone_number_alt }}</li>{% endif %}
+                    <li>Email: {% if contact_info %}{{ contact_info.email_main }}{% else %}info@clinic.ru{% endif %}</li>
+                    {% if contact_info.email_alt %}<li>Доп. Email: {{ contact_info.email_alt }}</li>{% endif %}
+                    <li>Часы работы: {% if contact_info %}{{ contact_info.work_hours }}{% else %}ПН-ПТ 9:00-18:00{% endif %}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2);">
+        © 2024 {% if contact_info %}{{ contact_info.name }}{% else %}Название Клиники{% endif %}. Все права защищены.
+    </div>
+</footer>
+
+   <div class="modal fade" id="callbackModal" tabindex="-1" aria-labelledby="callbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="callbackModalLabel">Связаться с нами</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Оставьте нам сообщение, и мы свяжемся с вами в ближайшее время.</p>
+                <form id="contactForm" method="post" action="{% url 'core:submit_feedback' %}">
+                    {% csrf_token %}
+                    {% for field in contact_form %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                            {% if field.errors %}<div class="text-danger">{{ field.errors }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary">Отправить сообщение</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <script>
+        // Функция для отображения Bootstrap Toast уведомлений
+        function showToast(message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container');
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            const div = document.createElement('div');
+            div.innerHTML = toastHtml;
+            const toastElement = div.firstElementChild;
+            toastContainer.appendChild(toastElement);
+
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 5000 // Скрывается через 5 секунд
+            });
+            toast.show();
+
+            // Удаляем тост из DOM после скрытия
+            toastElement.addEventListener('hidden.bs.toast', function () {
+                toastElement.remove();
+            });
+        }
+
+        // JavaScript для обработки отправки формы через AJAX
+        document.addEventListener('DOMContentLoaded', function() {
+            const contactForm = document.getElementById('contactForm'); // Это форма в callbackModal
+            if (contactForm) {
+                contactForm.addEventListener('submit', function(e) {
+                    e.preventDefault(); // Предотвращаем стандартную отправку формы
+
+                    const formData = new FormData(contactForm);
+                    const actionUrl = contactForm.getAttribute('action');
+
+                    fetch(actionUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest', // Важно для Django
+                            'X-CSRFToken': formData.get('csrfmiddlewaretoken') // Токен CSRF
+                        }
+                    })
+                    .then(response => {
+                        // Клонируем ответ, чтобы использовать его дважды (для .ok и .json())
+                        const clonedResponse = response.clone();
+                        return clonedResponse.json().then(data => ({
+                            ok: response.ok,
+                            status: response.status,
+                            data: data
+                        }));
+                    })
+                    .then(({ ok, status, data }) => {
+                        if (ok) {
+                            showToast(data.message, 'success');
+                            contactForm.reset(); // Очистить форму после успешной отправки
+                            const callbackModal = bootstrap.Modal.getInstance(document.getElementById('callbackModal')); // ИЗМЕНЕНО: callbackModal
+                            if (callbackModal) {
+                                callbackModal.hide(); // Закрыть модальное окно
+                            }
+                        } else {
+                            // Обработка ошибок валидации или серверных ошибок
+                            let errorMessage = 'Ошибка отправки формы:';
+                            if (data.errors) {
+                                for (const field in data.errors) {
+                                    errorMessage += `\n${field}: ${data.errors[field].join(', ')}`;
+                                }
+                            } else if (data.message) {
+                                errorMessage = data.message;
+                            }
+                            showToast(errorMessage, 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка AJAX:', error);
+                        showToast('Произошла ошибка сети. Пожалуйста, попробуйте позже.', 'danger');
+                    });
+                });
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

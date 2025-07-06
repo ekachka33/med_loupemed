@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Наши услуги - Медицинская клиника{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center mb-4">Наши Медицинские Услуги</h1>
+
+    <p class="lead text-center mb-5">Мы предлагаем широкий спектр медицинских услуг, разработанных для поддержания вашего здоровья и благополучия. Ознакомьтесь с нашими предложениями ниже.</p>
+
+    {# Секция фильтрации по категориям #}
+    {% if categories %}
+    <div class="text-center mb-4">
+        <h4 class="mb-3">Фильтровать по категории:</h4>
+        <div class="btn-group flex-wrap" role="group" aria-label="Service categories">
+            <a href="{% url 'core:service_list' %}" class="btn {% if not selected_category %}btn-primary{% else %}btn-outline-primary{% endif %} mb-2 me-2">Все услуги</a>
+            {% for category in categories %}
+                <a href="{% url 'core:service_list' %}?category={{ category.slug }}"
+                   class="btn {% if selected_category and selected_category.slug == category.slug %}btn-primary{% else %}btn-outline-primary{% endif %} mb-2 me-2">
+                    {{ category.name }}
+                </a>
+            {% endfor %}
+        </div>
+        {% if selected_category %}
+            <p class="mt-3 text-muted">Выбрана категория: <strong>{{ selected_category.name }}</strong></p>
+            {% if selected_category.description %}
+                <p class="text-muted">{{ selected_category.description }}</p>
+            {% endif %}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <hr class="my-5">
+
+    {# Список услуг #}
+    {% if services %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for service in services %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    {% if service.image %}
+                        <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <img src="{% static 'img/service_placeholder.jpg' %}" class="card-img-top" alt="Изображение услуги" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ service.name }}</h5>
+                        {% if service.category %}
+                            <p class="card-text text-muted"><small>Категория: {{ service.category.name }}</small></p>
+                        {% endif %}
+                        <p class="card-text flex-grow-1">{{ service.short_description|linebreaksbr }}</p>
+                        <div class="mt-auto"> {# Прикрепляем к низу карточки #}
+                            {% if service.base_price %}
+                                <p class="card-text fs-5 fw-bold text-success">Цена: {{ service.base_price }} руб.</p>
+                            {% elif service.price_items.exists %}
+                                <p class="card-text fs-5 fw-bold text-success">Цена от: {{ service.price_items.first.price }} руб.</p>
+                            {% else %}
+                                <p class="card-text text-muted">Цена по запросу</p>
+                            {% endif %}
+                            <a href="{% url 'core:service_detail' slug=service.slug %}" class="btn btn-primary mt-2">Подробнее</a>
+                            <a href="{% if user.is_authenticated %}{% url 'core:make_appointment' %}{% else %}{% url 'accounts:register' %}{% endif %}" class="btn btn-success mt-2">Записаться на прием</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center lead">Услуги в данной категории пока не добавлены.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,143 @@
+{# core/templates/core/doctor_panel.html #}
+{% extends 'base.html' %} {# Убедитесь, что ваш базовый шаблон правильно указан #}
+{% load static %} {# Если вы используете статические файлы #}
+
+{% block title %}{{ title }} - Панель врача{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center mb-4">{{ title }}</h1>
+
+    <div class="text-center mb-4">
+        <h2>Добро пожаловать, {{ doctor.name }}!</h2>
+        <p>Вы вошли как **Врач**: {{ doctor.name }} ({{ doctor.specialty }})</p>
+    </div>
+
+    <div class="row">
+        {# Колонка для формы загрузки результатов анализов #}
+        <div class="col-md-5 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Добавить результат анализов</h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        <ul class="list-unstyled">
+                            {% for message in messages %}
+                                <li class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+                                    {{ message }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data"> {# ВАЖНО: enctype для загрузки файлов #}
+                        {% csrf_token %}
+
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <div class="form-text text-muted">{{ field.help_text }}</div>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <ul class="errorlist list-unstyled text-danger">
+                                        {% for error in field.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <button type="submit" class="btn btn-success w-100">Загрузить результат</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# Колонка для списка записей врача #}
+        <div class="col-md-7 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Мои записи (все)</h3>
+                </div>
+                <div class="card-body">
+                    {% if all_appointments %}
+                        <ul class="list-group">
+                            {% for appointment in all_appointments %}
+                                <li class="list-group-item mb-3">
+                                    <h5 class="mb-1">
+                                        Услуга: <strong>{{ appointment.service.name }}</strong>
+                                        <span class="badge bg-secondary ms-2">{{ appointment.status|capfirst }}</span>
+                                    </h5>
+                                    <p class="mb-1">
+                                        Клиент: <strong>{{ appointment.user.username }}</strong> ({{ appointment.user.email }})<br>
+                                        Дата: <strong>{{ appointment.date|date:"d M Y" }}</strong><br>
+                                        Время: <strong>{{ appointment.time|time:"H:i" }}</strong>
+                                    </p>
+                                    {% if appointment.comment %}
+                                        <p class="mb-1"><small class="text-muted">Комментарий клиента: {{ appointment.comment }}</small></p>
+                                    {% endif %}
+
+                                    {# Отображение прикрепленных медицинских записей #}
+                                    {% if appointment.medical_record %} {# Проверяем, есть ли связанная MedicalRecord #}
+                                        <div class="mt-2 p-2 border rounded bg-light">
+                                            <h6><i class="fas fa-file-alt me-1"></i> Прикрепленный результат:</h6>
+                                            <p class="mb-1">Название: <strong>{{ appointment.medical_record.title }}</strong></p>
+                                            <p class="mb-1">Загружено: {{ appointment.medical_record.uploaded_at|date:"d M Y H:i" }}</p>
+                                            {% if appointment.medical_record.notes %}
+                                                <p class="mb-1"><small>Примечания: {{ appointment.medical_record.notes }}</small></p>
+                                            {% endif %}
+                                            <a href="{{ appointment.medical_record.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                                <i class="fas fa-download me-1"></i> Скачать файл
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        {# Можно добавить кнопку или ссылку для быстрой загрузки для этой конкретной записи #}
+                                        <button type="button" class="btn btn-sm btn-outline-success mt-2"
+                                                onclick="selectAppointmentForUpload('{{ appointment.id }}', '{{ appointment.service.name }} {{ appointment.date|date:'d M Y' }} {{ appointment.time|time:'H:i' }} - {{ appointment.user.username }}')">
+                                            <i class="fas fa-upload me-1"></i> Загрузить результат
+                                        </button>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="alert alert-info" role="alert">
+                            У вас пока нет записей.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="{% url 'core:profile' %}" class="btn btn-secondary">Вернуться в личный кабинет</a>
+    </div>
+</div>
+
+<script>
+    function selectAppointmentForUpload(appointmentId, appointmentText) {
+        const appointmentSelect = document.getElementById('id_appointment');
+        // Устанавливаем выбранную запись в форме
+        appointmentSelect.value = appointmentId;
+        // Можно также обновить текст, если нужно, чтобы пользователь видел, что выбрано
+        // Например, найти и выбрать опцию по value
+        for (let i = 0; i < appointmentSelect.options.length; i++) {
+            if (appointmentSelect.options[i].value === appointmentId) {
+                appointmentSelect.options[i].selected = true;
+                break;
+            }
+        }
+        // Прокрутить к форме
+        const uploadFormCard = document.querySelector('.col-md-5');
+        if (uploadFormCard) {
+            uploadFormCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+</script>
+
+{% endblock %}

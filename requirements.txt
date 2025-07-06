@@ -2,3 +2,9 @@ Django~=4.2
 psycopg2-binary~=2.9
 python-dotenv~=1.0
 Pillow~=10.0
+coverage
+djangorestframework
+gunicorn
+flake8==6.1.0
+isort==5.13.2
+black==24.4.2

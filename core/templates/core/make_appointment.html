@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Запись на прием</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .form-container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .flatpickr-calendar {
+            z-index: 2000; /* Убедимся, что календарь Flatpickr поверх других элементов */
+        }
+        /* Стили для Django сообщений (messages) - уже были хороши! */
+        .messages {
+            list-style-type: none;
+            padding: 0;
+            margin-bottom: 1rem;
+        }
+        .messages li {
+            padding: .75rem 1.25rem;
+            border: 1px solid transparent;
+            border-radius: .25rem;
+            margin-bottom: .5rem;
+        }
+        .messages .success {
+            color: #0f5132;
+            background-color: #d1e7dd;
+            border-color: #badbcc;
+        }
+        .messages .error {
+            color: #842029;
+            background-color: #f8d7da;
+            border-color: #f5c2c7;
+        }
+        /* Стили для ошибок формы Django */
+        .errorlist {
+            color: #dc3545; /* Цвет текста ошибки Bootstrap danger */
+            font-size: 0.875em; /* Размер шрифта, как у help-text Bootstrap */
+            margin-top: 0.25rem; /* Отступ сверху */
+            list-style: none; /* Убрать маркеры списка */
+            padding-left: 0; /* Убрать отступ слева */
+        }
+    </style>
+</head>
+<body>
+    <div class="container form-container">
+        <h1 class="mb-4">Запись на прием</h1>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <form method="post" id="appointment-form">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                {{ form.doctor.label_tag }}
+                {{ form.doctor }} {# Уже есть виджет в forms.py, который добавит классы Bootstrap #}
+                {% if form.doctor.errors %}<ul class="errorlist">{% for error in form.doctor.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.service.label_tag }}
+                {{ form.service }} {# Уже есть виджет в forms.py #}
+                {% if form.service.errors %}<ul class="errorlist">{% for error in form.service.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.date.label_tag }}
+                {{ form.date }} {# Уже есть виджет в forms.py, который добавит type="text" и класс "form-control" #}
+                {% if form.date.errors %}<ul class="errorlist">{% for error in form.date.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                <div class="form-text">Выберите желаемую дату приема.</div>
+            </div>
+
+            <div class="mb-3">
+                {{ form.time.label_tag }}
+                {{ form.time }} {# Уже есть виджет в forms.py, который добавит класс "form-select" и disabled #}
+                {% if form.time.errors %}<ul class="errorlist">{% for error in form.time.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                <div class="form-text">Выберите доступное время после выбора врача, услуги и даты.</div>
+            </div>
+
+            <div class="mb-4">
+                {{ form.comments.label_tag }}
+                {{ form.comments }} {# Уже есть виджет в forms.py, который добавит класс "form-control" #}
+                {% if form.comments.errors %}<ul class="errorlist">{% for error in form.comments.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-success w-100">Записаться</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+
+    <script>
+        const GET_SERVICES_FOR_DOCTOR_URL = "{% url 'core:get_services_for_doctor' %}";
+        const GET_AVAILABLE_TIME_SLOTS_URL = "{% url 'core:get_available_time_slots' %}";
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const doctorSelect = document.getElementById('id_doctor');
+            const serviceSelect = document.getElementById('id_service');
+            const dateInput = document.getElementById('id_date');
+            const timeSelect = document.getElementById('id_time');
+
+            // Инициализация Flatpickr
+            const fp = flatpickr(dateInput, {
+                dateFormat: "Y-m-d",
+                locale: "ru",
+                minDate: "today",
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (dateStr) { // Проверяем, что дата выбрана
+                        getAvailableTimeSlots();
+                    } else {
+                        // Если дата сброшена, очищаем и отключаем timeSelect
+                        timeSelect.innerHTML = '<option value="">Выберите дату</option>';
+                        timeSelect.disabled = true;
+                    }
+                },
+                // Если ты хочешь, чтобы календарь появлялся при клике на иконку
+                // или поле, а не только на поле
+                // wrap: true, // требует, чтобы dateInput был обернут в div с классом flatpickr-wrapper
+                // clickOpens: true,
+                // allowInput: true, // Позволяет вводить дату вручную
+            });
+
+            // Функция для получения услуг по выбранному врачу
+            function getServicesForDoctor(initialLoad = false) {
+                const doctorId = doctorSelect.value;
+                serviceSelect.innerHTML = '<option value="">Загрузка услуг...</option>';
+                serviceSelect.disabled = true;
+                timeSelect.innerHTML = '<option value="">Сначала выберите услугу</option>';
+                timeSelect.disabled = true;
+
+                if (doctorId) {
+                    const url = `${GET_SERVICES_FOR_DOCTOR_URL}?doctor_id=${doctorId}`;
+                    fetch(url)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            serviceSelect.innerHTML = '<option value="">Выберите услугу</option>';
+                            if (data.length > 0) {
+                                serviceSelect.disabled = false;
+                                data.forEach(service => {
+                                    const option = document.createElement('option');
+                                    option.value = service.id;
+                                    option.textContent = service.name;
+                                    serviceSelect.appendChild(option);
+                                });
+                                // Если это не начальная загрузка или если serviceSelect уже имеет выбранное значение,
+                                // и оно есть в новом списке, сохраняем его.
+                                // Иначе сбрасываем и триггерим getAvailableTimeSlots
+                                if (initialLoad && serviceSelect.dataset.initialValue) {
+                                    serviceSelect.value = serviceSelect.dataset.initialValue;
+                                    // Теперь, когда услуга выбрана (если была), загружаем слоты
+                                    if (doctorSelect.value && serviceSelect.value && dateInput.value) {
+                                        getAvailableTimeSlots();
+                                    }
+                                } else if (!initialLoad || !serviceSelect.value) {
+                                    // Если нет начального значения или оно сброшено,
+                                    // вызываем getAvailableTimeSlots, чтобы обновить время
+                                    getAvailableTimeSlots();
+                                }
+                            } else {
+                                serviceSelect.innerHTML = '<option value="">Услуги не найдены для этого врача</option>';
+                                serviceSelect.disabled = true;
+                                timeSelect.innerHTML = '<option value="">Услуги не найдены</option>';
+                                timeSelect.disabled = true;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Ошибка при получении услуг:', error);
+                            serviceSelect.innerHTML = '<option value="">Ошибка загрузки услуг</option>';
+                            serviceSelect.disabled = true;
+                            timeSelect.innerHTML = '<option value="">Ошибка</option>';
+                            timeSelect.disabled = true;
+                        });
+                } else {
+                    serviceSelect.innerHTML = '<option value="">Сначала выберите врача</option>';
+                    serviceSelect.disabled = true;
+                    timeSelect.innerHTML = '<option value="">Сначала выберите врача</option>';
+                    timeSelect.disabled = true;
+                }
+            }
+
+            // Функция для получения доступных слотов времени
+            function getAvailableTimeSlots(initialLoad = false) {
+                const doctorId = doctorSelect.value;
+                const serviceId = serviceSelect.value;
+                const date = dateInput.value;
+
+                timeSelect.innerHTML = '<option value="">Загрузка времени...</option>';
+                timeSelect.disabled = true;
+
+                if (doctorId && serviceId && date) {
+                    const url = `${GET_AVAILABLE_TIME_SLOTS_URL}?doctor_id=${doctorId}&service_id=${serviceId}&date=${date}`;
+                    fetch(url)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            timeSelect.innerHTML = ''; // Очищаем текущие опции
+                            if (data.error) {
+                                timeSelect.innerHTML = `<option value="">Ошибка: ${data.error}</option>`;
+                                timeSelect.disabled = true;
+                            } else if (data.available_slots && data.available_slots.length > 0) {
+                                timeSelect.disabled = false;
+                                timeSelect.innerHTML += '<option value="">Выберите время</option>';
+                                data.available_slots.forEach(slot => {
+                                    const option = document.createElement('option');
+                                    option.value = slot;
+                                    option.textContent = slot;
+                                    timeSelect.appendChild(option);
+                                });
+                                // Если это начальная загрузка и есть начальное значение для timeSelect,
+                                // пытаемся его установить
+                                if (initialLoad && timeSelect.dataset.initialValue) {
+                                    timeSelect.value = timeSelect.dataset.initialValue;
+                                }
+                            } else {
+                                timeSelect.innerHTML = '<option value="">Нет доступных слотов на эту дату</option>';
+                                timeSelect.disabled = true;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Ошибка при получении слотов времени:', error);
+                            timeSelect.innerHTML = '<option value="">Ошибка загрузки слотов</option>';
+                            timeSelect.disabled = true;
+                        });
+                } else {
+                    timeSelect.innerHTML = '<option value="">Выберите врача, услугу и дату</option>';
+                    timeSelect.disabled = true;
+                }
+            }
+
+            // Обработчики событий
+            doctorSelect.addEventListener('change', function() {
+                // Сбрасываем выбранную услугу и время при смене врача
+                serviceSelect.value = "";
+                timeSelect.value = "";
+                getServicesForDoctor();
+            });
+
+            serviceSelect.addEventListener('change', function() {
+                // Сбрасываем выбранное время при смене услуги
+                timeSelect.value = "";
+                if (doctorSelect.value && serviceSelect.value && dateInput.value) {
+                    getAvailableTimeSlots();
+                } else {
+                    timeSelect.innerHTML = '<option value="">Выберите врача, услугу и дату</option>';
+                    timeSelect.disabled = true;
+                }
+            });
+
+            // Инициализация при загрузке страницы:
+            // Сохраняем текущие значения, если они были установлены (например, при ошибке формы)
+            if (doctorSelect.value) {
+                doctorSelect.dataset.initialValue = doctorSelect.value;
+            }
+            if (serviceSelect.value) {
+                serviceSelect.dataset.initialValue = serviceSelect.value;
+            }
+            if (timeSelect.value) {
+                timeSelect.dataset.initialValue = timeSelect.value;
+            }
+
+            // Вызываем функции для инициализации, передавая флаг initialLoad
+            // чтобы сохранить ранее выбранные значения, если форма была отправлена с ошибками
+            if (doctorSelect.value) {
+                getServicesForDoctor(true);
+            } else {
+                // Если врач не выбран, то услуги и время должны быть отключены
+                serviceSelect.innerHTML = '<option value="">Сначала выберите врача</option>';
+                serviceSelect.disabled = true;
+                timeSelect.innerHTML = '<option value="">Сначала выберите врача</option>';
+                timeSelect.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>
