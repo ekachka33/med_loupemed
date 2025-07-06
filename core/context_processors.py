@@ -7,7 +7,7 @@ def contact_info(request):
     Берет последнюю активную запись.
     """
     try:
-        info = ContactInfo.objects.filter(is_active=True).latest('created_at')
+        info = ContactInfo.objects.filter(is_active=True).latest("created_at")
     except ContactInfo.DoesNotExist:
         info = None
-    return {'contact_info': info}
+    return {"contact_info": info}

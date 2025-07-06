@@ -6,28 +6,44 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0010_alter_appointment_options_and_more'),
+        ("core", "0010_alter_appointment_options_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='doctor',
-            name='default_end_time',
-            field=models.TimeField(blank=True, help_text='Если указано, будет использоваться для генерации расписания по умолчанию.', null=True, verbose_name='Стандартное время окончания работы'),
+            model_name="doctor",
+            name="default_end_time",
+            field=models.TimeField(
+                blank=True,
+                help_text="Если указано, будет использоваться для генерации расписания по умолчанию.",
+                null=True,
+                verbose_name="Стандартное время окончания работы",
+            ),
         ),
         migrations.AddField(
-            model_name='doctor',
-            name='default_interval_minutes',
-            field=models.IntegerField(default=30, help_text='Используется для генерации слотов для записи по умолчанию. Минимум 5 минут.', verbose_name='Стандартный интервал слотов (мин)'),
+            model_name="doctor",
+            name="default_interval_minutes",
+            field=models.IntegerField(
+                default=30,
+                help_text="Используется для генерации слотов для записи по умолчанию. Минимум 5 минут.",
+                verbose_name="Стандартный интервал слотов (мин)",
+            ),
         ),
         migrations.AddField(
-            model_name='doctor',
-            name='default_start_time',
-            field=models.TimeField(blank=True, help_text='Если указано, будет использоваться для генерации расписания по умолчанию.', null=True, verbose_name='Стандартное время начала работы'),
+            model_name="doctor",
+            name="default_start_time",
+            field=models.TimeField(
+                blank=True,
+                help_text="Если указано, будет использоваться для генерации расписания по умолчанию.",
+                null=True,
+                verbose_name="Стандартное время начала работы",
+            ),
         ),
         migrations.AlterField(
-            model_name='doctorschedule',
-            name='interval_minutes',
-            field=models.IntegerField(default=30, verbose_name='Длительность сеанса (мин)'),
+            model_name="doctorschedule",
+            name="interval_minutes",
+            field=models.IntegerField(
+                default=30, verbose_name="Длительность сеанса (мин)"
+            ),
         ),
     ]

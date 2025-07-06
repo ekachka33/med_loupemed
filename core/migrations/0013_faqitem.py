@@ -6,24 +6,40 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0012_alter_doctor_default_interval_minutes_medicalrecord'),
+        ("core", "0012_alter_doctor_default_interval_minutes_medicalrecord"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='FAQItem',
+            name="FAQItem",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('question', models.CharField(max_length=255, verbose_name='Вопрос')),
-                ('answer', models.TextField(blank=True, null=True, verbose_name='Ответ')),
-                ('is_published', models.BooleanField(default=False, verbose_name='Опубликовать на сайте')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("question", models.CharField(max_length=255, verbose_name="Вопрос")),
+                (
+                    "answer",
+                    models.TextField(blank=True, null=True, verbose_name="Ответ"),
+                ),
+                (
+                    "is_published",
+                    models.BooleanField(
+                        default=False, verbose_name="Опубликовать на сайте"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Вопрос и Ответ (FAQ)',
-                'verbose_name_plural': 'Вопросы и Ответы (FAQ)',
-                'ordering': ['-created_at'],
+                "verbose_name": "Вопрос и Ответ (FAQ)",
+                "verbose_name_plural": "Вопросы и Ответы (FAQ)",
+                "ordering": ["-created_at"],
             },
         ),
     ]

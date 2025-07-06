@@ -6,21 +6,29 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0009_alter_doctor_name'),
+        ("core", "0009_alter_doctor_name"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='appointment',
-            options={'ordering': ['-date', '-time'], 'verbose_name': 'Запись на прием', 'verbose_name_plural': 'Записи на прием'},
+            name="appointment",
+            options={
+                "ordering": ["-date", "-time"],
+                "verbose_name": "Запись на прием",
+                "verbose_name_plural": "Записи на прием",
+            },
         ),
         migrations.AlterModelOptions(
-            name='doctorschedule',
-            options={'ordering': ['date', 'start_time'], 'verbose_name': 'Расписание врача', 'verbose_name_plural': 'Расписание врачей'},
+            name="doctorschedule",
+            options={
+                "ordering": ["date", "start_time"],
+                "verbose_name": "Расписание врача",
+                "verbose_name_plural": "Расписание врачей",
+            },
         ),
         migrations.AddField(
-            model_name='doctorschedule',
-            name='interval_minutes',
+            model_name="doctorschedule",
+            name="interval_minutes",
             field=models.IntegerField(default=30),
         ),
     ]

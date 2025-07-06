@@ -17,9 +17,6 @@ venv/
 media/
 static_collected/
 .idea
-
-# IDEs
-.idea/  # Для PyCharm/IntelliJ
 .vscode/ # Для VS Code
 
 # Operating System

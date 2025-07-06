@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0006_servicecategory_service_servicepriceitem'),
+        ("core", "0006_servicecategory_service_servicepriceitem"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contactinfo',
-            name='map_link',
-            field=models.CharField(blank=True, max_length=500, null=True, verbose_name='Ссылка на карту (Google Maps/Yandex Maps)'),
+            model_name="contactinfo",
+            name="map_link",
+            field=models.CharField(
+                blank=True,
+                max_length=500,
+                null=True,
+                verbose_name="Ссылка на карту (Google Maps/Yandex Maps)",
+            ),
         ),
     ]

@@ -1,13 +1,22 @@
+from datetime import date, time, timedelta
+
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
-from datetime import timedelta, time, date
-import datetime
-from django.contrib.auth import get_user_model
-from django.utils.timezone import now
 
 from core.models import (
-    ContactRequest, AboutUsPage, ContactInfo, Doctor, Review, ServiceCategory,
-    Service, ServicePriceItem, Appointment, DoctorSchedule, MedicalRecord, FAQItem
+    AboutUsPage,
+    Appointment,
+    ContactInfo,
+    ContactRequest,
+    Doctor,
+    DoctorSchedule,
+    FAQItem,
+    MedicalRecord,
+    Review,
+    Service,
+    ServiceCategory,
+    ServicePriceItem,
 )
 
 # Получаем модель пользователя Django
@@ -31,7 +40,7 @@ class ContactRequestModelTest(TestCase):
             email="ivanov@example.com",
             phone_number="+79001234567",
             message="У меня вопрос по услугам.",
-            request_type="question"
+            request_type="question",
         )
         self.assertEqual(question_request.full_name, "Иванов Иван Иванович")
         self.assertEqual(question_request.email, "ivanov@example.com")
@@ -45,7 +54,7 @@ class ContactRequestModelTest(TestCase):
         callback_request = ContactRequest.objects.create(
             full_name="Петрова Анна Сергеевна",
             request_type="callback",
-            phone_number="+79017654321"
+            phone_number="+79017654321",
         )
         self.assertEqual(callback_request.full_name, "Петрова Анна Сергеевна")
         self.assertIsNone(callback_request.email)  # Проверяем, что email null
@@ -61,7 +70,7 @@ class ContactRequestModelTest(TestCase):
         request = ContactRequest.objects.create(
             full_name="Сидоров Кирилл",
             request_type="question",
-            message="Тестовое сообщение."
+            message="Тестовое сообщение.",
         )
         # Убедимся, что формат времени соответствует ожидаемому
         expected_str = (
@@ -75,8 +84,7 @@ class ContactRequestModelTest(TestCase):
         Проверяет, что значения по умолчанию для полей устанавливаются правильно.
         """
         request = ContactRequest.objects.create(
-            full_name="Тестовый Пользователь",
-            request_type="callback"
+            full_name="Тестовый Пользователь", request_type="callback"
         )
         self.assertFalse(request.is_processed)  # default=False
 
@@ -87,7 +95,9 @@ class ContactRequestModelTest(TestCase):
         # Создаем несколько запросов с разным временем
         now = timezone.now()
         request1 = ContactRequest.objects.create(
-            full_name="Один", request_type="question", created_at=now - timedelta(days=2)
+            full_name="Один",
+            request_type="question",
+            created_at=now - timedelta(days=2),
         )
         request2 = ContactRequest.objects.create(
             full_name="Два", request_type="question", created_at=now - timedelta(days=1)
@@ -113,7 +123,7 @@ class AboutUsPageModelTest(TestCase):
         """
         page = AboutUsPage.objects.create(
             title="О нашей клинике",
-            content="Подробная информация о нашей миссии и истории."
+            content="Подробная информация о нашей миссии и истории.",
         )
         self.assertEqual(page.title, "О нашей клинике")
         self.assertEqual(page.content, "Подробная информация о нашей миссии и истории.")
@@ -125,8 +135,7 @@ class AboutUsPageModelTest(TestCase):
         Проверяет строковое представление объекта AboutUsPage.
         """
         page = AboutUsPage.objects.create(
-            title="Наша история",
-            content="Рассказ о становлении клиники."
+            title="Наша история", content="Рассказ о становлении клиники."
         )
         self.assertEqual(str(page), "Наша история")
 
@@ -137,8 +146,7 @@ class AboutUsPageModelTest(TestCase):
         Здесь мы просто проверяем, что поле image существует.
         """
         page = AboutUsPage.objects.create(
-            title="Тест с изображением",
-            content="Контент."
+            title="Тест с изображением", content="Контент."
         )
         self.assertIsNone(page.image.name)
 
@@ -163,7 +171,7 @@ class ContactInfoModelTest(TestCase):
             work_hours="ПН-ПТ 9:00-18:00, СБ 10:00-15:00",
             map_link="https://maps.google.com/?q=ул.+Примерная,+10",
             facebook_link="https://facebook.com/zdorovie",
-            instagram_link="https://instagram.com/zdorovie"
+            instagram_link="https://instagram.com/zdorovie",
         )
         self.assertEqual(contact.name, "Медицинский Центр Здоровье")
         self.assertEqual(contact.address, "ул. Примерная, 10, г. Город")
@@ -183,7 +191,7 @@ class ContactInfoModelTest(TestCase):
             address="ул. Центральная, 1",
             phone_number_main="+78005553535",
             email_main="main@office.com",
-            work_hours="24/7"
+            work_hours="24/7",
         )
         self.assertEqual(str(contact), "Главный офис")
 
@@ -192,7 +200,7 @@ class ContactInfoModelTest(TestCase):
             address="ул. Без Названия, 1",
             phone_number_main="+78001002030",
             email_main="noname@office.com",
-            work_hours="ПН-ПТ 9:00-17:00"
+            work_hours="ПН-ПТ 9:00-17:00",
         )
         # Ожидаем значение по умолчанию для name
         self.assertEqual(str(contact_no_name), "Медицинская Клиника")
@@ -205,9 +213,11 @@ class ContactInfoModelTest(TestCase):
             address="ул. По умолчанию, 1",
             phone_number_main="+79000000000",
             email_main="default@test.com",
-            work_hours="По графику"
+            work_hours="По графику",
         )
-        self.assertEqual(contact.name, "Медицинская Клиника")  # default="Медицинская Клиника"
+        self.assertEqual(
+            contact.name, "Медицинская Клиника"
+        )  # default="Медицинская Клиника"
         self.assertTrue(contact.is_active)  # default=True
 
     def test_ordering(self):
@@ -216,16 +226,28 @@ class ContactInfoModelTest(TestCase):
         """
         now = timezone.now()
         contact1 = ContactInfo.objects.create(
-            name="Старый", address="а", phone_number_main="1", email_main="a@a", work_hours="а",
-            created_at=now - timedelta(days=2)
+            name="Старый",
+            address="а",
+            phone_number_main="1",
+            email_main="a@a",
+            work_hours="а",
+            created_at=now - timedelta(days=2),
         )
         contact2 = ContactInfo.objects.create(
-            name="Средний", address="б", phone_number_main="2", email_main="b@b", work_hours="б",
-            created_at=now - timedelta(days=1)
+            name="Средний",
+            address="б",
+            phone_number_main="2",
+            email_main="b@b",
+            work_hours="б",
+            created_at=now - timedelta(days=1),
         )
         contact3 = ContactInfo.objects.create(
-            name="Новый", address="в", phone_number_main="3", email_main="c@c", work_hours="в",
-            created_at=now
+            name="Новый",
+            address="в",
+            phone_number_main="3",
+            email_main="c@c",
+            work_hours="в",
+            created_at=now,
         )
 
         contacts = ContactInfo.objects.all()
@@ -241,9 +263,9 @@ class DoctorModelTest(TestCase):
     def setUp(self):
         """Создаем тестового пользователя для связи с доктором."""
         self.user = User.objects.create_user(
-            username='test_doctor_user',
-            email='doctor@example.com',
-            password='password123'
+            username="test_doctor_user",
+            email="doctor@example.com",
+            password="password123",
         )
 
     def test_create_doctor(self):
@@ -256,33 +278,29 @@ class DoctorModelTest(TestCase):
             specialty="Терапевт",
             bio="Опытный терапевт с 15-летним стажем.",
             experience_years=15,
-            education="МГУ им. Ломоносова"
+            education="МГУ им. Ломоносова",
         )
         self.assertEqual(doctor.name, "Др. Елена Смирнова")
         self.assertEqual(doctor.specialty, "Терапевт")
         self.assertEqual(doctor.user, self.user)
         self.assertTrue(doctor.is_active)
         self.assertEqual(doctor.experience_years, 15)
-        self.assertEqual(doctor.default_interval_minutes, 30)  # Проверка дефолтного значения
+        self.assertEqual(
+            doctor.default_interval_minutes, 30
+        )  # Проверка дефолтного значения
 
     def test_str_representation(self):
         """
         Проверяет строковое представление объекта Doctor.
         """
-        doctor = Doctor.objects.create(
-            name="Др. Петров Алексей",
-            specialty="Хирург"
-        )
+        doctor = Doctor.objects.create(name="Др. Петров Алексей", specialty="Хирург")
         self.assertEqual(str(doctor), "Др. Петров Алексей (Хирург)")
 
     def test_default_values(self):
         """
         Проверяет значения по умолчанию для полей Doctor.
         """
-        doctor = Doctor.objects.create(
-            name="Др. Иван Иванов",
-            specialty="Педиатр"
-        )
+        doctor = Doctor.objects.create(name="Др. Иван Иванов", specialty="Педиатр")
         self.assertEqual(doctor.experience_years, 0)  # default=0
         self.assertEqual(doctor.default_interval_minutes, 30)  # default=30
         self.assertTrue(doctor.is_active)  # default=True
@@ -300,8 +318,7 @@ class ReviewModelTest(TestCase):
     def setUp(self):
         """Создаем тестового врача для связи с отзывом."""
         self.doctor = Doctor.objects.create(
-            name="Др. Анна Иванова",
-            specialty="Дерматолог"
+            name="Др. Анна Иванова", specialty="Дерматолог"
         )
 
     def test_create_review(self):
@@ -314,7 +331,7 @@ class ReviewModelTest(TestCase):
             rating=4,
             text="Отличный врач, очень внимательный.",
             doctor=self.doctor,
-            is_approved=True
+            is_approved=True,
         )
         self.assertEqual(review.full_name, "Мария С.")
         self.assertEqual(review.rating, 4)
@@ -328,10 +345,7 @@ class ReviewModelTest(TestCase):
         Проверяет строковое представление объекта Review с указанным врачом.
         """
         review = Review.objects.create(
-            full_name="Алексей П.",
-            rating=5,
-            text="Все супер!",
-            doctor=self.doctor
+            full_name="Алексей П.", rating=5, text="Все супер!", doctor=self.doctor
         )
         expected_str = f"Отзыв от Алексей П. на 5 звезд (Врач: {self.doctor.name})"
         self.assertEqual(str(review), expected_str)
@@ -341,9 +355,7 @@ class ReviewModelTest(TestCase):
         Проверяет строковое представление объекта Review без указанного врача (общий отзыв).
         """
         review = Review.objects.create(
-            full_name="Ольга К.",
-            rating=3,
-            text="Клиника хорошая."
+            full_name="Ольга К.", rating=3, text="Клиника хорошая."
         )
         expected_str = "Отзыв от Ольга К. на 3 звезд (Врач: Общий)"
         self.assertEqual(str(review), expected_str)
@@ -352,10 +364,7 @@ class ReviewModelTest(TestCase):
         """
         Проверяет значения по умолчанию для полей Review.
         """
-        review = Review.objects.create(
-            full_name="Дмитрий",
-            text="Хорошо."
-        )
+        review = Review.objects.create(full_name="Дмитрий", text="Хорошо.")
         self.assertEqual(review.rating, 5)  # default=5
         self.assertFalse(review.is_approved)  # default=False
         self.assertIsNone(review.doctor)  # blank=True, null=True
@@ -372,11 +381,10 @@ class ServiceCategoryModelTest(TestCase):
         Проверяет, что объект ServiceCategory может быть успешно создан.
         """
         category = ServiceCategory.objects.create(
-            name="Стоматология",
-            description="Услуги по уходу за зубами."
+            name="Стоматология", description="Услуги по уходу за зубами."
         )
         self.assertEqual(category.name, "Стоматология")
-        self.assertEqual(category.slug, '')
+        self.assertEqual(category.slug, "")
         self.assertEqual(category.description, "Услуги по уходу за зубами.")
         self.assertEqual(category.order, 0)  # default=0
 
@@ -399,6 +407,7 @@ class ServiceCategoryModelTest(TestCase):
         # Ожидаемый порядок: cat3 (1, Аллергология), cat2 (1, Педиатрия), cat1 (2, Кардиология)
         self.assertEqual(list(categories), [cat3, cat2, cat1])
 
+
 class ServiceModelTest(TestCase):
     """
     Тесты для модели Service.
@@ -420,12 +429,12 @@ class ServiceModelTest(TestCase):
             short_description="Консультация с терапевтом.",
             full_description="Полное обследование и анамнез.",
             base_price=1500.00,
-            duration_minutes=45
+            duration_minutes=45,
         )
         service.doctors.add(self.doctor)
 
         self.assertEqual(service.name, "Первичный осмотр")
-        self.assertEqual(service.slug, '')
+        self.assertEqual(service.slug, "")
         self.assertEqual(service.category, self.category)
         self.assertEqual(service.base_price, 1500.00)
         self.assertEqual(service.duration_minutes, 45)
@@ -439,7 +448,7 @@ class ServiceModelTest(TestCase):
         service = Service.objects.create(
             name="Анализ крови",
             short_description="Общий анализ.",
-            full_description="Полный анализ крови."
+            full_description="Полный анализ крови.",
         )
         self.assertEqual(str(service), "Анализ крови")
 
@@ -451,7 +460,7 @@ class ServiceModelTest(TestCase):
             name="Комплексная диагностика",
             short_description="Комплекс.",
             full_description="Детальная диагностика.",
-            base_price=None  # intentionally left blank
+            base_price=None,  # intentionally left blank
         )
         self.assertIsNone(service.base_price)
 
@@ -462,12 +471,10 @@ class ServiceModelTest(TestCase):
         service1 = Service.objects.create(
             name="Консультация",
             short_description="К.",
-            full_description="Консультация."
+            full_description="Консультация.",
         )
         service2 = Service.objects.create(
-            name="Операция",
-            short_description="О.",
-            full_description="Операция."
+            name="Операция", short_description="О.", full_description="Операция."
         )
 
         doctor1 = Doctor.objects.create(name="Др. Первый", specialty="Терапевт")
@@ -499,7 +506,7 @@ class ServicePriceItemModelTest(TestCase):
         self.service = Service.objects.create(
             name="Стоматологический осмотр",
             short_description="Осмотр.",
-            full_description="Осмотр у стоматолога."
+            full_description="Осмотр у стоматолога.",
         )
 
     def test_create_service_price_item(self):
@@ -510,7 +517,7 @@ class ServicePriceItemModelTest(TestCase):
             service=self.service,
             item_name="Первичная консультация",
             price=1200.50,
-            unit="за сеанс"
+            unit="за сеанс",
         )
         self.assertEqual(price_item.service, self.service)
         self.assertEqual(price_item.item_name, "Первичная консультация")
@@ -523,9 +530,7 @@ class ServicePriceItemModelTest(TestCase):
         Проверяет строковое представление объекта ServicePriceItem.
         """
         price_item = ServicePriceItem.objects.create(
-            service=self.service,
-            item_name="Консультация",
-            price=1000.00
+            service=self.service, item_name="Консультация", price=1000.00
         )
         self.assertEqual(str(price_item), f"{self.service.name} - Консультация")
 
@@ -534,17 +539,17 @@ class ServicePriceItemModelTest(TestCase):
         Проверяет ограничение unique_together для service и item_name.
         """
         ServicePriceItem.objects.create(
-            service=self.service,
-            item_name="Вторичный прием",
-            price=800.00
+            service=self.service, item_name="Вторичный прием", price=800.00
         )
         with self.assertRaises(Exception) as cm:  # Expecting IntegrityError or similar
             ServicePriceItem.objects.create(
                 service=self.service,
                 item_name="Вторичный прием",  # Same service and item_name
-                price=900.00
+                price=900.00,
             )
-        self.assertIn('duplicate key value violates unique constraint', str(cm.exception))
+        self.assertIn(
+            "duplicate key value violates unique constraint", str(cm.exception)
+        )
 
     def test_ordering(self):
         """
@@ -574,15 +579,15 @@ class AppointmentModelTest(TestCase):
     def setUp(self):
         """Создаем тестового пользователя, врача и услугу для записей на прием."""
         self.user = User.objects.create_user(
-            username='patient',
-            email='patient@example.com',
-            password='testpassword'
+            username="patient", email="patient@example.com", password="testpassword"
         )
-        self.doctor = Doctor.objects.create(name="Др. Олег Иванов", specialty="Кардиолог")
+        self.doctor = Doctor.objects.create(
+            name="Др. Олег Иванов", specialty="Кардиолог"
+        )
         self.service = Service.objects.create(
             name="Консультация кардиолога",
             short_description="Конс.",
-            full_description="Полная консультация."
+            full_description="Полная консультация.",
         )
 
     def test_create_appointment(self):
@@ -597,15 +602,15 @@ class AppointmentModelTest(TestCase):
             service=self.service,
             date=today,
             time=appointment_time,
-            status='pending',
-            comments="Есть боли в груди."
+            status="pending",
+            comments="Есть боли в груди.",
         )
         self.assertEqual(appointment.user, self.user)
         self.assertEqual(appointment.doctor, self.doctor)
         self.assertEqual(appointment.service, self.service)
         self.assertEqual(appointment.date, today)
         self.assertEqual(appointment.time, appointment_time)
-        self.assertEqual(appointment.status, 'pending')
+        self.assertEqual(appointment.status, "pending")
         self.assertEqual(appointment.comments, "Есть боли в груди.")
         self.assertIsNotNone(appointment.created_at)
         self.assertIsNotNone(appointment.updated_at)
@@ -621,7 +626,7 @@ class AppointmentModelTest(TestCase):
             doctor=self.doctor,
             service=self.service,
             date=today,
-            time=appointment_time
+            time=appointment_time,
         )
         # Ожидаем строковое представление времени с секундами
         expected_str = (
@@ -641,7 +646,7 @@ class AppointmentModelTest(TestCase):
             doctor=self.doctor,
             service=self.service,
             date=test_date,
-            time=test_start
+            time=test_start,
         )
         with self.assertRaises(Exception) as cm:  # Expecting IntegrityError or similar
             Appointment.objects.create(
@@ -649,9 +654,11 @@ class AppointmentModelTest(TestCase):
                 doctor=self.doctor,
                 service=self.service,
                 date=test_date,
-                time=test_start  # Same doctor, date, time
+                time=test_start,  # Same doctor, date, time
             )
-        self.assertIn('duplicate key value violates unique constraint', str(cm.exception))
+        self.assertIn(
+            "duplicate key value violates unique constraint", str(cm.exception)
+        )
 
     def test_is_past_appointment(self):
         """
@@ -668,7 +675,7 @@ class AppointmentModelTest(TestCase):
             doctor=self.doctor,
             service=self.service,
             date=past_date,
-            time=past_time
+            time=past_time,
         )
         self.assertTrue(past_appointment.is_past_appointment())
         # Запись в будущем (гарантированно)
@@ -679,7 +686,7 @@ class AppointmentModelTest(TestCase):
             doctor=self.doctor,
             service=self.service,
             date=future_date,
-            time=future_time
+            time=future_time,
         )
         self.assertFalse(future_appointment.is_past_appointment())
 
@@ -692,7 +699,7 @@ class AppointmentModelTest(TestCase):
             doctor=self.doctor,
             service=self.service,
             date=now_aware.date(),
-            time=future_time_today
+            time=future_time_today,
         )
         self.assertFalse(current_appointment_future_today.is_past_appointment())
 
@@ -703,7 +710,7 @@ class AppointmentModelTest(TestCase):
             doctor=self.doctor,
             service=self.service,
             date=now_aware.date(),
-            time=past_time_today
+            time=past_time_today,
         )
         self.assertTrue(current_appointment_past_today.is_past_appointment())
 
@@ -716,7 +723,9 @@ class DoctorScheduleModelTest(TestCase):
 
     def setUp(self):
         """Создаем тестового врача для расписания."""
-        self.doctor = Doctor.objects.create(name="Др. Ирина Коваль", specialty="Невролог")
+        self.doctor = Doctor.objects.create(
+            name="Др. Ирина Коваль", specialty="Невролог"
+        )
 
     def test_create_doctor_schedule(self):
         """
@@ -727,7 +736,7 @@ class DoctorScheduleModelTest(TestCase):
             date=date(2025, 7, 10),
             start_time=time(9, 0),
             end_time=time(17, 0),
-            interval_minutes=45
+            interval_minutes=45,
         )
         self.assertEqual(schedule.doctor, self.doctor)
         self.assertEqual(schedule.date, date(2025, 7, 10))
@@ -743,10 +752,12 @@ class DoctorScheduleModelTest(TestCase):
             doctor=self.doctor,
             date=date(2025, 7, 11),
             start_time=time(10, 0),
-            end_time=time(18, 0)
+            end_time=time(18, 0),
         )
         # Ожидаем строковое представление времени с секундами
-        expected_str = f"Расписание {self.doctor.name} на {date(2025, 7, 11)}: 10:00:00-18:00:00"
+        expected_str = (
+            f"Расписание {self.doctor.name} на {date(2025, 7, 11)}: 10:00:00-18:00:00"
+        )
         self.assertEqual(str(schedule), expected_str)
 
     def test_unique_together_constraint(self):
@@ -757,19 +768,18 @@ class DoctorScheduleModelTest(TestCase):
         test_start = time(9, 0)
         test_end = time(17, 0)
         DoctorSchedule.objects.create(
-            doctor=self.doctor,
-            date=test_date,
-            start_time=test_start,
-            end_time=test_end
+            doctor=self.doctor, date=test_date, start_time=test_start, end_time=test_end
         )
         with self.assertRaises(Exception) as cm:  # Expecting IntegrityError or similar
             DoctorSchedule.objects.create(
                 doctor=self.doctor,
                 date=test_date,
                 start_time=test_start,
-                end_time=test_end  # Same doctor, date, start_time, end_time
+                end_time=test_end,  # Same doctor, date, start_time, end_time
             )
-        self.assertIn('duplicate key value violates unique constraint', str(cm.exception))
+        self.assertIn(
+            "duplicate key value violates unique constraint", str(cm.exception)
+        )
 
     def test_default_interval_minutes(self):
         """
@@ -779,7 +789,7 @@ class DoctorScheduleModelTest(TestCase):
             doctor=self.doctor,
             date=date(2025, 7, 12),
             start_time=time(9, 0),
-            end_time=time(17, 0)
+            end_time=time(17, 0),
         )
         self.assertEqual(schedule.interval_minutes, 30)  # default=30
 
@@ -796,24 +806,22 @@ class MedicalRecordModelTest(TestCase):
         для связи с медицинской записью.
         """
         self.patient_user = User.objects.create_user(
-            username='patient_record',
-            email='patient_record@example.com',
-            password='password123'
+            username="patient_record",
+            email="patient_record@example.com",
+            password="password123",
         )
         self.doctor_user = User.objects.create_user(
-            username='doctor_uploader',
-            email='doctor_uploader@example.com',
-            password='password123'
+            username="doctor_uploader",
+            email="doctor_uploader@example.com",
+            password="password123",
         )
         self.doctor = Doctor.objects.create(
-            user=self.doctor_user,
-            name="Др. Евгений Прохоров",
-            specialty="Лаборант"
+            user=self.doctor_user, name="Др. Евгений Прохоров", specialty="Лаборант"
         )
         self.service = Service.objects.create(
             name="Анализ крови",
             short_description="Кровь.",
-            full_description="Полный анализ крови."
+            full_description="Полный анализ крови.",
         )
         self.appointment = Appointment.objects.create(
             user=self.patient_user,
@@ -821,7 +829,7 @@ class MedicalRecordModelTest(TestCase):
             service=self.service,
             date=date(2025, 7, 1),
             time=time(9, 0),
-            status='completed'
+            status="completed",
         )
 
     def test_create_medical_record(self):
@@ -831,13 +839,15 @@ class MedicalRecordModelTest(TestCase):
         record = MedicalRecord.objects.create(
             appointment=self.appointment,
             title="Результаты общего анализа крови",
-            file='medical_records/blood_test_patient_record.pdf',  # Пример пути к файлу
+            file="medical_records/blood_test_patient_record.pdf",  # Пример пути к файлу
             uploaded_by_doctor=self.doctor_user,
-            notes="Все показатели в норме."
+            notes="Все показатели в норме.",
         )
         self.assertEqual(record.appointment, self.appointment)
         self.assertEqual(record.title, "Результаты общего анализа крови")
-        self.assertEqual(record.file.name, 'medical_records/blood_test_patient_record.pdf')
+        self.assertEqual(
+            record.file.name, "medical_records/blood_test_patient_record.pdf"
+        )
         self.assertEqual(record.uploaded_by_doctor, self.doctor_user)
         self.assertEqual(record.notes, "Все показатели в норме.")
         self.assertIsNotNone(record.uploaded_at)
@@ -849,8 +859,8 @@ class MedicalRecordModelTest(TestCase):
         record = MedicalRecord.objects.create(
             appointment=self.appointment,
             title="Заключение УЗИ",
-            file='medical_records/uzi_conclusion.pdf',
-            uploaded_by_doctor=self.doctor_user
+            file="medical_records/uzi_conclusion.pdf",
+            uploaded_by_doctor=self.doctor_user,
         )
         expected_str = (
             f"Результат для {self.appointment.user.username} "
@@ -865,17 +875,19 @@ class MedicalRecordModelTest(TestCase):
         MedicalRecord.objects.create(
             appointment=self.appointment,
             title="Первая запись",
-            file='medical_records/first.pdf',
-            uploaded_by_doctor=self.doctor_user
+            file="medical_records/first.pdf",
+            uploaded_by_doctor=self.doctor_user,
         )
         with self.assertRaises(Exception) as cm:  # Expecting IntegrityError or similar
             MedicalRecord.objects.create(
                 appointment=self.appointment,  # Same appointment
                 title="Вторая запись",
-                file='medical_records/second.pdf',
-                uploaded_by_doctor=self.doctor_user
+                file="medical_records/second.pdf",
+                uploaded_by_doctor=self.doctor_user,
             )
-        self.assertIn('duplicate key value violates unique constraint', str(cm.exception))
+        self.assertIn(
+            "duplicate key value violates unique constraint", str(cm.exception)
+        )
 
 
 class FAQItemModelTest(TestCase):
@@ -891,10 +903,12 @@ class FAQItemModelTest(TestCase):
         faq = FAQItem.objects.create(
             question="Как записаться на прием?",
             answer="Вы можете записаться через личный кабинет или по телефону.",
-            is_published=True
+            is_published=True,
         )
         self.assertEqual(faq.question, "Как записаться на прием?")
-        self.assertEqual(faq.answer, "Вы можете записаться через личный кабинет или по телефону.")
+        self.assertEqual(
+            faq.answer, "Вы можете записаться через личный кабинет или по телефону."
+        )
         self.assertTrue(faq.is_published)
         self.assertIsNotNone(faq.created_at)
         self.assertIsNotNone(faq.updated_at)
@@ -903,26 +917,22 @@ class FAQItemModelTest(TestCase):
         """
         Проверяет строковое представление объекта FAQItem.
         """
-        faq_short = FAQItem.objects.create(
-            question="Вопрос",
-            answer="Ответ"
-        )
+        faq_short = FAQItem.objects.create(question="Вопрос", answer="Ответ")
         self.assertEqual(str(faq_short), "Вопрос")
 
         faq_long = FAQItem.objects.create(
             question="Очень длинный вопрос, который должен быть обрезан для строкового представления объекта.",
-            answer="Ответ"
+            answer="Ответ",
         )
-        self.assertEqual(str(faq_long), "Очень длинный вопрос, который должен быть обрезан ...")
-
+        self.assertEqual(
+            str(faq_long), "Очень длинный вопрос, который должен быть обрезан ..."
+        )
 
     def test_default_values(self):
         """
         Проверяет значения по умолчанию для полей FAQItem.
         """
-        faq = FAQItem.objects.create(
-            question="Тестовый вопрос"
-        )
+        faq = FAQItem.objects.create(question="Тестовый вопрос")
         self.assertIsNone(faq.answer)  # blank=True, null=True
         self.assertFalse(faq.is_published)  # default=False
 
@@ -937,9 +947,7 @@ class FAQItemModelTest(TestCase):
         faq2 = FAQItem.objects.create(
             question="2", answer="2", created_at=now - timedelta(days=1)
         )
-        faq3 = FAQItem.objects.create(
-            question="3", answer="3", created_at=now
-        )
+        faq3 = FAQItem.objects.create(question="3", answer="3", created_at=now)
 
         faqs = FAQItem.objects.all()
         self.assertEqual(list(faqs), [faq3, faq2, faq1])

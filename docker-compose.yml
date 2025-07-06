@@ -1,20 +1,22 @@
 
-
 services:
   web:
     build: .
     command: >
-      sh -c "python manage.py collectstatic --noinput &&
-             python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn med_loupemed.wsgi:application --bind 0.0.0.0:8000"
     volumes:
       - .:/app
-    ports:
-      - "8000:8000"
+      - static_volume:/app/static_collected
+      - media_volume:/app/media
+    expose:
+      - "8000"
     env_file:
       - ./.env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:13-alpine
@@ -22,13 +24,26 @@ services:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
       - ./.env
-    ports:
-      - "5433:5432" # Опционально: если нужен доступ к БД напрямую с хоста
+    # ports:
+    #   - "5432:5432" # Убираем, если не нужен прямой доступ извне
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U 63692POSTGRES_USER -d 63692POSTGRES_DB"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80" # Проксируем порт 80 хоста на порт 80 контейнера Nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_volume:/app/static_collected:ro
+      - media_volume:/app/media:ro
+    depends_on:
+      - web
+
 volumes:
   postgres_data:
+  static_volume: # Новый volume для статических файлов
+  media_volume:  # Новый volume для медиафайлов
